@@ -136,20 +136,38 @@ async def analyze(
                     },
                 )
             except RuntimeError as error:
+                error_message = str(error)
+                details = None
+                if error_message.startswith(
+                    "CICFlowMeter failed."
+                ):
+                    parts = error_message.split(
+                        "\n",
+                        1,
+                    )
+                    if len(parts) > 1 and parts[1].strip():
+                        details = parts[1].strip()
+
                 logger.warning(
                     "Flow extraction failed for %s: %s",
                     filename,
-                    str(error),
+                    error_message,
                 )
+
+                content = {
+                    "status": "error",
+                    "message": (
+                        "Flow extraction failed during "
+                        "traffic conversion."
+                    ),
+                }
+
+                if details:
+                    content["details"] = details
+
                 return JSONResponse(
                     status_code=500,
-                    content={
-                        "status": "error",
-                        "message": (
-                            "Flow extraction failed during "
-                            "traffic conversion."
-                        ),
-                    },
+                    content=content,
                 )
 
             inference = run_unified_inference(df)

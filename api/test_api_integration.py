@@ -313,6 +313,28 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             index=False,
         )
 
+        cls.mixed_flow_dns_csv = (
+            Path(cls.fixtures_dir.name)
+            / "mixed_flow_dns_fixture.csv"
+        )
+        pd.DataFrame(
+            [
+                {
+                    "domain": "google.com",
+                    "src_ip": "10.5.5.5",
+                    "dst_ip": "192.168.55.5",
+                    "dst_port": 80,
+                    "tot_fwd_pkts": 1800,
+                    "fwd_pkts_s": 2300,
+                    "totlen_fwd_pkts": 850000,
+                    "tot_bwd_pkts": 18,
+                }
+            ]
+        ).to_csv(
+            cls.mixed_flow_dns_csv,
+            index=False,
+        )
+
         cls.pcap_file = (
             Path(cls.fixtures_dir.name)
             / "capture_fixture.pcap"
@@ -538,6 +560,33 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         self.assertEqual(
             payload["file_type"],
             "pcap",
+        )
+
+    def test_flow_contract_precedence_over_dns_column(self):
+        response = self._post_csv(
+            self.mixed_flow_dns_csv
+        )
+        payload = response.json()
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+        self._assert_required_analysis_fields(payload)
+
+        threat_classes = {
+            alert["threat_class"]
+            for alert in payload["alerts"]
+        }
+
+        self.assertTrue(
+            {"PortScan", "DDoS"}.issubset(
+                threat_classes
+            )
+        )
+        self.assertNotIn(
+            "DGA_DNS_Tunneling",
+            threat_classes,
         )
 
 

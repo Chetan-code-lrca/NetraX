@@ -162,9 +162,6 @@ def detect_input_contract(df, flow_models):
     if ENCRYPTED_REQUIRED.issubset(columns):
         return "encrypted_flow"
 
-    if any(name in columns for name in DNS_COLUMNS):
-        return "dns_query"
-
     if CICFLOW_REQUIRED.issubset(columns):
         return "flow_features"
 
@@ -172,6 +169,9 @@ def detect_input_contract(df, flow_models):
         feature_names = set(model.feature_names_in_)
         if feature_names.issubset(columns):
             return "flow_features"
+
+    if any(name in columns for name in DNS_COLUMNS):
+        return "dns_query"
 
     raise ValueError(
         "Unsupported CSV schema for NetraX detectors."
@@ -213,6 +213,11 @@ def _safe_float(value):
 
 def _run_flow_detectors(df, flow_models):
     alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
 
     for index, series in df.iterrows():
         row = series.to_dict()
@@ -227,27 +232,45 @@ def _run_flow_detectors(df, flow_models):
                 flow_id=flow_id,
                 model=model,
             )
-            alerts.append(
-                normalize_alert(
-                    alert,
-                    row,
-                    f"{threat_class.lower()}-{index}",
+            status = alert["status"]
+            if status == "DETECTED":
+                counts["detected"] += 1
+            elif status == "AMBIGUOUS":
+                counts["ambiguous"] += 1
+            else:
+                counts["insufficient"] += 1
+
+            if status in ("DETECTED", "AMBIGUOUS"):
+                alerts.append(
+                    normalize_alert(
+                        alert,
+                        row,
+                        f"{threat_class.lower()}-{index}",
+                    )
                 )
-            )
 
         exfiltration_alert = detect_exfiltration(
             _prepare_exfiltration_features(row),
             flow_id=flow_id,
         )
-        alerts.append(
-            normalize_alert(
-                exfiltration_alert,
-                row,
-                f"data_exfiltration-{index}",
-            )
-        )
+        status = exfiltration_alert["status"]
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
 
-    return alerts
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    exfiltration_alert,
+                    row,
+                    f"data_exfiltration-{index}",
+                )
+            )
+
+    return alerts, counts
 
 
 def _prepare_exfiltration_features(row):
@@ -285,6 +308,11 @@ def _prepare_exfiltration_features(row):
 
 def _run_c2_detector(df):
     alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
 
     for index, series in df.iterrows():
         row = series.to_dict()
@@ -300,19 +328,32 @@ def _run_c2_detector(df):
             evidence=evidence,
             flow_id=f"c2-{index}",
         )
-        alerts.append(
-            normalize_alert(
-                alert,
-                row,
-                f"c2_beaconing-{index}",
-            )
-        )
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
 
-    return alerts
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    alert,
+                    row,
+                    f"c2_beaconing-{index}",
+                )
+            )
+
+    return alerts, counts
 
 
 def _run_dns_detector(df, vectorizer, model):
     alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
     domain_column = next(
         column
         for column in DNS_COLUMNS
@@ -358,19 +399,32 @@ def _run_dns_detector(df, vectorizer, model):
             evidence=list(dict.fromkeys(evidence)),
             flow_id=f"dns-{index}",
         )
-        alerts.append(
-            normalize_alert(
-                alert,
-                row,
-                f"dga_dns_tunneling-{index}",
-            )
-        )
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
 
-    return alerts
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    alert,
+                    row,
+                    f"dga_dns_tunneling-{index}",
+                )
+            )
+
+    return alerts, counts
 
 
 def _run_encrypted_detector(df, model):
     alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
 
     for index, series in df.iterrows():
         row = series.to_dict()
@@ -379,30 +433,34 @@ def _run_encrypted_detector(df, model):
             flow_id=f"encrypted-{index}",
             model=model,
         )
-        alerts.append(
-            normalize_alert(
-                alert,
-                row,
-                f"encrypted_malware-{index}",
-            )
-        )
+        status = alert["status"]
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
 
-    return alerts
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    alert,
+                    row,
+                    f"encrypted_malware-{index}",
+                )
+            )
+
+    return alerts, counts
 
 
 def run_unified_inference(df):
-    contract = None
-    columns = set(df.columns)
-
-    if set(C2_FEATURES).issubset(columns):
-        contract = "c2_behavioral"
-    elif ENCRYPTED_REQUIRED.issubset(columns):
-        contract = "encrypted_flow"
-    elif any(name in columns for name in DNS_COLUMNS):
-        contract = "dns_query"
-
     flow_models = {}
-    if contract is None:
+    try:
+        contract = detect_input_contract(
+            df,
+            flow_models=flow_models,
+        )
+    except ValueError:
         flow_models = {
             threat_class: load_model(threat_class)
             for threat_class in FLOW_THREATS
@@ -413,27 +471,37 @@ def run_unified_inference(df):
         )
 
     if contract == "flow_features":
-        alerts = _run_flow_detectors(
+        if not flow_models:
+            flow_models = {
+                threat_class: load_model(threat_class)
+                for threat_class in FLOW_THREATS
+            }
+        alerts, counts = _run_flow_detectors(
             df,
             flow_models=flow_models,
         )
     elif contract == "c2_behavioral":
-        alerts = _run_c2_detector(df)
+        alerts, counts = _run_c2_detector(df)
     elif contract == "dns_query":
         dns_vectorizer, dns_model = load_dns_model()
-        alerts = _run_dns_detector(
+        alerts, counts = _run_dns_detector(
             df,
             dns_vectorizer,
             dns_model,
         )
     elif contract == "encrypted_flow":
         encrypted_model = load_encrypted_model()
-        alerts = _run_encrypted_detector(
+        alerts, counts = _run_encrypted_detector(
             df,
             encrypted_model,
         )
     else:
         alerts = []
+        counts = {
+            "detected": 0,
+            "ambiguous": 0,
+            "insufficient": 0,
+        }
 
     alerts.sort(
         key=lambda item: (
@@ -444,39 +512,20 @@ def run_unified_inference(df):
         reverse=True,
     )
 
-    positive_alerts = [
-        alert
-        for alert in alerts
-        if alert["status"] in ("DETECTED", "AMBIGUOUS")
-    ]
-
-    dashboard_alerts = positive_alerts[:MAX_DASHBOARD_ALERTS]
-
-    detected_count = sum(
-        alert["status"] == "DETECTED"
-        for alert in alerts
-    )
-    ambiguous_count = sum(
-        alert["status"] == "AMBIGUOUS"
-        for alert in alerts
-    )
-    insufficient_count = sum(
-        alert["status"] == "INSUFFICIENT"
-        for alert in alerts
-    )
+    dashboard_alerts = alerts[:MAX_DASHBOARD_ALERTS]
 
     return {
         "contract": contract,
         "alerts": dashboard_alerts,
-        "alerts_generated": int(len(positive_alerts)),
+        "alerts_generated": int(len(alerts)),
         "alerts_returned": int(len(dashboard_alerts)),
         "alerts_truncated": (
-            len(positive_alerts) > MAX_DASHBOARD_ALERTS
+            len(alerts) > MAX_DASHBOARD_ALERTS
         ),
         "summary": {
-            "detected": int(detected_count),
-            "ambiguous": int(ambiguous_count),
-            "insufficient": int(insufficient_count),
+            "detected": int(counts["detected"]),
+            "ambiguous": int(counts["ambiguous"]),
+            "insufficient": int(counts["insufficient"]),
         },
         "packets_processed": estimate_packet_count(df),
     }
