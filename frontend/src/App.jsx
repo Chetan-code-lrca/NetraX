@@ -31,6 +31,7 @@ function App() {
   const [error, setError] = useState('')
   const [selectedAlertId, setSelectedAlertId] = useState(null)
   const abortRef = useRef(null)
+  const selectedFileRef = useRef(null)
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
@@ -39,6 +40,7 @@ function App() {
 
   const handleFile = async (file) => {
     abortRef.current?.abort()
+    selectedFileRef.current = file
     setTrafficFile(file)
     setRecordCount(null)
     setAnalysis(null)
@@ -47,7 +49,9 @@ function App() {
     setAnalysisStatus(file ? ANALYSIS_STATES.READY : ANALYSIS_STATES.NO_FILE)
     if (file?.name.toLowerCase().endsWith('.csv')) {
       const contents = await file.text()
-      setRecordCount(Math.max(contents.trim().split(/\r?\n/).length - 1, 0))
+      if (selectedFileRef.current === file) {
+        setRecordCount(Math.max(contents.trim().split(/\r?\n/).length - 1, 0))
+      }
     }
   }
 
@@ -75,7 +79,7 @@ function App() {
   }
 
   const stopAnalysis = () => abortRef.current?.abort()
-  const resetAnalysis = () => { abortRef.current?.abort(); setTrafficFile(null); setRecordCount(null); setAnalysisStatus(ANALYSIS_STATES.NO_FILE); setAnalysis(null); setError(''); setSelectedAlertId(null) }
+  const resetAnalysis = () => { abortRef.current?.abort(); selectedFileRef.current = null; setTrafficFile(null); setRecordCount(null); setAnalysisStatus(ANALYSIS_STATES.NO_FILE); setAnalysis(null); setError(''); setSelectedAlertId(null) }
   const headerStatus = analysisStatus === ANALYSIS_STATES.BACKEND_OFFLINE ? 'BACKEND OFFLINE' : analysisStatus === ANALYSIS_STATES.COMPLETE ? 'ANALYSIS COMPLETE' : 'ANALYSIS SERVICE READY'
 
   return (

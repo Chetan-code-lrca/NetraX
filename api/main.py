@@ -1,3 +1,5 @@
+import hashlib
+import logging
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,6 +16,7 @@ from features.cicflow_adapter import adapt_cicflow_row
 
 
 APP_VERSION = "0.3.0"
+logger = logging.getLogger(__name__)
 
 CICFLOWMETER_PATH = (
     ".venv-cicflow/bin/cicflowmeter"
@@ -521,6 +524,21 @@ def estimate_packet_count(df):
     return None
 
 
+def build_analysis_id(
+    filename,
+    contents,
+):
+    digest = hashlib.sha256()
+    digest.update(
+        filename.encode("utf-8")
+    )
+    digest.update(contents)
+    return (
+        "analysis-"
+        f"{digest.hexdigest()[:16]}"
+    )
+
+
 # =========================================================
 # HEALTH
 # =========================================================
@@ -749,8 +767,10 @@ async def analyze(
                 "status": "complete",
 
                 "analysis_id": (
-                    f"analysis-"
-                    f"{abs(hash(filename))}"
+                    build_analysis_id(
+                        filename,
+                        contents,
+                    )
                 ),
 
                 "filename": filename,
@@ -796,12 +816,19 @@ async def analyze(
                 },
             }
 
-    except Exception as exc:
+    except Exception:
+        logger.exception(
+            "Traffic analysis failed for %s",
+            filename,
+        )
 
         return JSONResponse(
             status_code=500,
             content={
                 "status": "error",
-                "message": str(exc),
+                "message": (
+                    "Traffic analysis failed "
+                    "inside the analysis service."
+                ),
             },
         )
