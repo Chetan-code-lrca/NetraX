@@ -38,7 +38,8 @@ def detect_model(
     Run ML inference and convert the result into a NetraX alert.
     """
 
-    model = model or load_model(threat_class)
+    if model is None:
+        model = load_model(threat_class)
 
     feature_names = list(model.feature_names_in_)
 

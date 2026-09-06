@@ -475,23 +475,20 @@ def _run_encrypted_detector(df, model):
 
 def run_unified_inference(df):
     flow_models = {}
-    try:
-        contract = detect_input_contract(
-            df,
-            flow_models=flow_models,
-        )
-    except ValueError:
-        if not _looks_like_flow_model_schema(df.columns):
-            raise
-
+    columns = set(df.columns)
+    if (
+        _looks_like_flow_model_schema(columns)
+        and not CICFLOW_REQUIRED.issubset(columns)
+    ):
         flow_models = {
             threat_class: load_model(threat_class)
             for threat_class in FLOW_THREATS
         }
-        contract = detect_input_contract(
-            df,
-            flow_models=flow_models,
-        )
+
+    contract = detect_input_contract(
+        df,
+        flow_models=flow_models,
+    )
 
     if contract == "flow_features":
         if not flow_models:
