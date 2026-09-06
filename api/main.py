@@ -39,6 +39,8 @@ ALLOWED_SUFFIXES = {
 
 # Protect the browser from receiving enormous responses.
 MAX_DASHBOARD_ALERTS = 500
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+CICFLOWMETER_TIMEOUT_SECONDS = 120
 
 
 app = FastAPI(
@@ -529,14 +531,8 @@ def estimate_packet_count(df):
 
 
 def build_analysis_id(
-    filename,
-    contents,
+    digest,
 ):
-    digest = hashlib.sha256()
-    digest.update(
-        filename.encode("utf-8")
-    )
-    digest.update(contents)
     return (
         "analysis-"
         f"{digest.hexdigest()[:16]}"
@@ -609,9 +605,6 @@ async def analyze(
         )
 
     try:
-
-        contents = await file.read()
-
         # -------------------------------------------------
         # Temporary workspace
         # -------------------------------------------------
@@ -628,9 +621,48 @@ async def analyze(
                 temp_dir / filename
             )
 
-            input_path.write_bytes(
-                contents
+            analysis_digest = (
+                hashlib.sha256()
             )
+            analysis_digest.update(
+                filename.encode("utf-8")
+            )
+
+            bytes_written = 0
+
+            with input_path.open(
+                "wb"
+            ) as handle:
+                while True:
+                    chunk = await file.read(
+                        1024 * 1024
+                    )
+
+                    if not chunk:
+                        break
+
+                    bytes_written += len(
+                        chunk
+                    )
+
+                    if (
+                        bytes_written
+                        > MAX_UPLOAD_BYTES
+                    ):
+                        return JSONResponse(
+                            status_code=413,
+                            content={
+                                "status": "error",
+                                "message": (
+                                    "Uploaded file is too large."
+                                ),
+                            },
+                        )
+
+                    analysis_digest.update(
+                        chunk
+                    )
+                    handle.write(chunk)
 
             # =============================================
             # CSV
@@ -665,11 +697,25 @@ async def analyze(
                     str(flow_csv),
                 ]
 
-                result = subprocess.run(
-                    command,
-                    capture_output=True,
-                    text=True,
-                )
+                try:
+                    result = subprocess.run(
+                        command,
+                        capture_output=True,
+                        text=True,
+                        timeout=(
+                            CICFLOWMETER_TIMEOUT_SECONDS
+                        ),
+                    )
+                except subprocess.TimeoutExpired:
+                    return JSONResponse(
+                        status_code=504,
+                        content={
+                            "status": "error",
+                            "message": (
+                                "CICFlowMeter timed out."
+                            ),
+                        },
+                    )
 
                 if result.returncode != 0:
 
@@ -775,8 +821,7 @@ async def analyze(
 
                 "analysis_id": (
                     build_analysis_id(
-                        filename,
-                        contents,
+                        analysis_digest,
                     )
                 ),
 

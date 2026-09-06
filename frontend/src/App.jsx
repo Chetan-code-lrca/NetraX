@@ -32,13 +32,18 @@ function App() {
   const [selectedAlertId, setSelectedAlertId] = useState(null)
   const abortRef = useRef(null)
   const selectedFileRef = useRef(null)
+  const inFlightRequestRef = useRef(null)
 
-  useEffect(() => () => abortRef.current?.abort(), [])
+  useEffect(() => () => {
+    inFlightRequestRef.current = null
+    abortRef.current?.abort()
+  }, [])
 
   const alerts = analysisStatus === ANALYSIS_STATES.COMPLETE ? analysis?.alerts ?? [] : []
   const selectedAlert = alerts.find((alert) => alert.alert_id === selectedAlertId)
 
   const handleFile = async (file) => {
+    inFlightRequestRef.current = null
     abortRef.current?.abort()
     selectedFileRef.current = file
     setTrafficFile(file)
@@ -59,10 +64,15 @@ function App() {
     if (!trafficFile) return
     setError('')
     setAnalysisStatus(ANALYSIS_STATES.ANALYZING)
-    abortRef.current = new AbortController()
+    const controller = new AbortController()
+    const requestToken = Symbol('analysis-request')
+    const requestFile = trafficFile
+    abortRef.current = controller
+    inFlightRequestRef.current = requestToken
     try {
-      const response = await analyzeTraffic(trafficFile, abortRef.current.signal)
-      const normalized = normalizeAnalysisResponse(response, trafficFile)
+      const response = await analyzeTraffic(requestFile, controller.signal)
+      if (inFlightRequestRef.current !== requestToken || selectedFileRef.current !== requestFile) return
+      const normalized = normalizeAnalysisResponse(response, requestFile)
       setAnalysis(normalized)
       setAnalysisStatus(normalized.status)
       if (normalized.status === ANALYSIS_STATES.COMPLETE) {
@@ -71,14 +81,17 @@ function App() {
         setError(response.message ?? 'Analysis request failed.')
       }
     } catch (requestError) {
+      if (inFlightRequestRef.current !== requestToken) return
       if (requestError.name === 'AbortError') { setAnalysisStatus(selectedFileRef.current ? ANALYSIS_STATES.READY : ANALYSIS_STATES.NO_FILE); return }
       setError(requestError.message)
       setAnalysisStatus(requestError.backendOffline ? ANALYSIS_STATES.BACKEND_OFFLINE : ANALYSIS_STATES.ERROR)
+    } finally {
+      if (inFlightRequestRef.current === requestToken) inFlightRequestRef.current = null
     }
   }
 
   const stopAnalysis = () => abortRef.current?.abort()
-  const resetAnalysis = () => { abortRef.current?.abort(); selectedFileRef.current = null; setTrafficFile(null); setRecordCount(null); setAnalysisStatus(ANALYSIS_STATES.NO_FILE); setAnalysis(null); setError(''); setSelectedAlertId(null) }
+  const resetAnalysis = () => { inFlightRequestRef.current = null; abortRef.current?.abort(); selectedFileRef.current = null; setTrafficFile(null); setRecordCount(null); setAnalysisStatus(ANALYSIS_STATES.NO_FILE); setAnalysis(null); setError(''); setSelectedAlertId(null) }
   const headerStatus = analysisStatus === ANALYSIS_STATES.BACKEND_OFFLINE ? 'BACKEND OFFLINE' : analysisStatus === ANALYSIS_STATES.COMPLETE ? 'ANALYSIS COMPLETE' : 'ANALYSIS SERVICE READY'
 
   return (

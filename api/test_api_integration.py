@@ -263,46 +263,49 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         )
 
     def test_analyze_duplicate_flow_alerts(self):
-        duplicate_csv_path = Path(
-            "/tmp/netrax_duplicate_demo.csv"
-        )
-        pd.DataFrame(
-            [
-                {
-                    "src_ip": "10.10.10.10",
-                    "dst_ip": "192.168.10.10",
-                    "dst_port": 1005,
-                    "tot_fwd_pkts": 1200,
-                    "fwd_pkts_s": 1500,
-                    "totlen_fwd_pkts": 260000,
-                    "Label": "MULTI",
-                },
-                {
-                    "src_ip": "10.10.10.11",
-                    "dst_ip": "192.168.10.11",
-                    "dst_port": 443,
-                    "tot_fwd_pkts": 40,
-                    "fwd_pkts_s": 6,
-                    "totlen_fwd_pkts": 7000,
-                    "Label": "BENIGN",
-                },
-            ]
-        ).to_csv(
-            duplicate_csv_path,
-            index=False,
-        )
-
-        with duplicate_csv_path.open("rb") as handle:
-            response = self.client.post(
-                "/api/analyze",
-                files={
-                    "file": (
-                        duplicate_csv_path.name,
-                        handle,
-                        "text/csv",
-                    )
-                },
+        with tempfile.TemporaryDirectory(
+            prefix="netrax-duplicate-"
+        ) as temp_dir:
+            duplicate_csv_path = Path(
+                temp_dir
+            ) / "netrax_duplicate_demo.csv"
+            pd.DataFrame(
+                [
+                    {
+                        "src_ip": "10.10.10.10",
+                        "dst_ip": "192.168.10.10",
+                        "dst_port": 1005,
+                        "tot_fwd_pkts": 1200,
+                        "fwd_pkts_s": 1500,
+                        "totlen_fwd_pkts": 260000,
+                        "Label": "MULTI",
+                    },
+                    {
+                        "src_ip": "10.10.10.11",
+                        "dst_ip": "192.168.10.11",
+                        "dst_port": 443,
+                        "tot_fwd_pkts": 40,
+                        "fwd_pkts_s": 6,
+                        "totlen_fwd_pkts": 7000,
+                        "Label": "BENIGN",
+                    },
+                ]
+            ).to_csv(
+                duplicate_csv_path,
+                index=False,
             )
+
+            with duplicate_csv_path.open("rb") as handle:
+                response = self.client.post(
+                    "/api/analyze",
+                    files={
+                        "file": (
+                            duplicate_csv_path.name,
+                            handle,
+                            "text/csv",
+                        )
+                    },
+                )
 
         payload = response.json()
 

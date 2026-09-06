@@ -3,6 +3,7 @@ const alertStatusValues = new Set(['DETECTED', 'AMBIGUOUS', 'INSUFFICIENT'])
 const analysisErrorStatuses = new Set(['error', 'failed'])
 
 const toFiniteNumber = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null)
+const toMetricValue = (value) => (typeof value === 'string' && value.trim() ? value : toFiniteNumber(value))
 
 const toAnalysisStatus = (status) => {
   if (typeof status !== 'string') return 'complete'
@@ -24,12 +25,12 @@ export function normalizeAlert(alert, index = 0) {
     timestamp: alert.timestamp ?? null,
     flow_id: flowId,
     threat_class: threatClass,
-    confidence: toFiniteNumber(alert.confidence),
+    confidence: toMetricValue(alert.confidence),
     status: alertStatusValues.has(alert.status) ? alert.status : 'INSUFFICIENT',
     evidence: Array.isArray(alert.evidence) ? alert.evidence : [],
     observability: alert.observability ?? 'Not supplied by analysis service.',
     observability_status: alert.observability_status ?? 'NOT SUPPLIED',
-    evidence_coverage: toFiniteNumber(alert.evidence_coverage),
+    evidence_coverage: toMetricValue(alert.evidence_coverage),
     missing_evidence: Array.isArray(alert.missing_evidence) ? alert.missing_evidence : [],
     source: alert.source ?? null,
     destination: alert.destination ?? null,
@@ -57,5 +58,5 @@ export function normalizeAnalysisResponse(response, selectedFile) {
   }
 }
 
-export function formatConfidence(confidence) { return typeof confidence === 'number' ? `${Math.round(confidence * 100)}%` : 'Not supplied' }
-export function formatCoverage(coverage) { return typeof coverage === 'number' ? `${Math.round(coverage * 100)}%` : 'Not supplied' }
+export function formatConfidence(confidence) { return typeof confidence === 'number' ? `${Math.round(confidence * 100)}%` : typeof confidence === 'string' && confidence.trim() ? confidence : 'Not supplied' }
+export function formatCoverage(coverage) { return typeof coverage === 'number' ? `${Math.round(coverage * 100)}%` : typeof coverage === 'string' && coverage.trim() ? coverage : 'Not supplied' }
