@@ -262,6 +262,49 @@ def enrich_alert(alert):
                 "Query frequency"
             )
 
+        # ---------------------------------------------------------
+        # Encrypted Malware
+        # ---------------------------------------------------------
+        elif "encrypted flow timing" in text:
+            matched.append(
+                "Flow duration"
+            )
+
+        elif "encrypted byte volume" in text:
+            matched.append(
+                "Packet sizes"
+            )
+
+        elif "encrypted packet volume" in text:
+            matched.append(
+                "Packet sizes"
+            )
+
+        elif "encrypted traffic rate" in text:
+            matched.append(
+                "Packet timing"
+            )
+
+        elif "encrypted packet rate" in text:
+            matched.append(
+                "Packet timing"
+            )
+
+        elif "tls sni" in text:
+            matched.append(
+                "TLS/QUIC metadata"
+            )
+
+        elif "tls ja3" in text:
+            matched.append(
+                "JA3/JA3S/JA4 when available"
+            )
+
+        elif "tls ja4" in text:
+            matched.append(
+                "JA3/JA3S/JA4 when available"
+            )
+            
     # Remove duplicates while preserving order.
     matched = list(dict.fromkeys(matched))
 
