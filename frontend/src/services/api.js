@@ -1,28 +1,35 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_NETRAX_API_URL?.trim() || ''
 
-export class TrafficAnalysisApiError extends Error {
-  constructor(message, { backendOffline = false } = {}) {
-    super(message)
-    this.backendOffline = backendOffline
-  }
+function url(path) {
+  return API_BASE ? `${API_BASE}${path}` : path
 }
 
-export async function analyzeTraffic(file, signal) {
-  const formData = new FormData()
-  formData.append('file', file)
-  let response
-
+async function json(response) {
+  let data = null
   try {
-    response = await fetch(`${API_BASE_URL}/api/analyze`, { method: 'POST', body: formData, signal })
-  } catch (error) {
-    if (error.name === 'AbortError') throw error
-    throw new TrafficAnalysisApiError('Traffic analysis service is not connected.', { backendOffline: true })
+    data = await response.json()
+  } catch {
+    throw new Error(`Invalid response from analysis service (HTTP ${response.status}).`)
   }
 
   if (!response.ok) {
-    const message = await response.text().catch(() => '')
-    throw new TrafficAnalysisApiError(message || `Traffic analysis failed (${response.status}).`, { backendOffline: response.status >= 500 })
+    throw new Error(data?.message || data?.detail || `Analysis service returned HTTP ${response.status}.`)
   }
 
-  return response.json()
+  return data
+}
+
+export async function checkHealth() {
+  return json(await fetch(url('/api/health'), { cache: 'no-store' }))
+}
+
+export async function analyzeTraffic(file, signal) {
+  const form = new FormData()
+  form.append('file', file)
+
+  return json(await fetch(url('/api/analyze'), {
+    method: 'POST',
+    body: form,
+    signal,
+  }))
 }

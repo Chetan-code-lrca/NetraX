@@ -1,16 +1,36 @@
-# React + Vite
+# NetraX Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Production-ready React/Vite dashboard for the NetraX FastAPI service.
 
-Currently, two official plugins are available:
+## Local
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Run the backend:
 
-## React Compiler
+```bash
+cd ~/NetraX
+PYTHONPATH=. python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Run the frontend:
 
-## Expanding the ESLint configuration
+```bash
+cd ~/NetraX/frontend
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Open `http://localhost:5173`.
+
+The Vite proxy forwards `/api/*` to `http://127.0.0.1:8000`.
+
+CSV uploads must already contain NetraX-compatible flow features. PCAP/PCAPNG uploads are converted by the backend.
+
+## Vercel
+
+Set:
+
+```text
+VITE_NETRAX_API_URL=https://YOUR-PUBLIC-NETRAX-API
+```
+
+and deploy this directory.
