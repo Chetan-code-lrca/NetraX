@@ -59,15 +59,17 @@ THREAT_PROFILES = {
         "observability": "MEDIUM",
         "status": "WEAKLY-SEPARABLE",
         "available_evidence": [
-            "DNS query names",
             "Query length",
             "Character entropy",
-            "N-gram characteristics",
-            "Query frequency"
+            "First-label structure",
+            "Query structure",
+            "Character composition"
         ],
         "missing_evidence": [
             "DNS response",
-            "Resolution success"
+            "Resolution success",
+            "Query sequence/frequency context",
+            "N-gram model evidence"
         ]
     },
 
@@ -142,62 +144,183 @@ def enrich_alert(alert):
     for item in observed:
         text = item.lower()
 
+        # ---------------------------------------------------------
         # C2
+        # ---------------------------------------------------------
         if "periodic" in text or "jitter" in text:
-            matched.extend(["Periodicity", "Timing jitter"])
+            matched.extend([
+                "Periodicity",
+                "Timing jitter"
+            ])
 
         elif "destination-port" in text:
-            matched.append("Repeated destination-port communication")
+            matched.append(
+                "Repeated destination-port communication"
+            )
 
         elif "persistent" in text:
-            matched.append("Destination persistence")
+            matched.append(
+                "Destination persistence"
+            )
 
         elif "flow" in text or "connection" in text:
-            matched.append("Connection frequency")
+            matched.append(
+                "Connection frequency"
+            )
 
         elif "inter-arrival" in text:
-            matched.append("Inter-arrival timing")
+            matched.append(
+                "Inter-arrival timing"
+            )
 
+        # ---------------------------------------------------------
         # PortScan
+        # ---------------------------------------------------------
         elif "port fan-out" in text:
-            matched.append("Destination-port fan-out")
+            matched.append(
+                "Destination-port fan-out"
+            )
 
         elif "host fan-out" in text:
-            matched.append("Destination-host fan-out")
+            matched.append(
+                "Destination-host fan-out"
+            )
 
         elif "source-side packet behavior" in text:
-            matched.append("Source-side packet behavior")
+            matched.append(
+                "Source-side packet behavior"
+            )
 
         elif "flow timing" in text:
-            matched.append("Flow timing")
+            matched.append(
+                "Flow timing"
+            )
 
+        # ---------------------------------------------------------
         # DDoS
+        # ---------------------------------------------------------
         elif "packet/flow rate" in text:
-            matched.append("Packet/flow rate")
+            matched.append(
+                "Packet/flow rate"
+            )
 
         elif "source-side packet volume" in text:
-            matched.append("Source-side packet volume")
+            matched.append(
+                "Source-side packet volume"
+            )
 
         elif "destination concentration" in text:
-            matched.append("Destination concentration")
+            matched.append(
+                "Destination concentration"
+            )
 
         elif "protocol distribution" in text:
-            matched.append("Protocol distribution")
+            matched.append(
+                "Protocol distribution"
+            )
 
         elif "packet-size" in text:
-            matched.append("Packet-size characteristics")
+            matched.append(
+                "Packet-size characteristics"
+            )
 
-    matched = list(set(matched))
+        # ---------------------------------------------------------
+        # DNS / DGA / Tunnelling
+        # ---------------------------------------------------------
+        elif "first-label" in text:
+            matched.append(
+                "First-label structure"
+            )
+
+        elif "multi-label" in text:
+            matched.append(
+                "Query structure"
+            )
+
+        elif "dns query name" in text or "dns query" in text:
+            matched.append(
+                "DNS query names"
+            )
+
+        elif "query" in text and "length" in text:
+            matched.append(
+                "Query length"
+            )
+
+        elif "entropy" in text:
+            matched.append(
+                "Character entropy"
+            )
+
+        elif "ngram" in text or "n-gram" in text:
+            matched.append(
+                "N-gram characteristics"
+            )
+
+        elif "dns" in text and "frequency" in text:
+            matched.append(
+                "Query frequency"
+            )
+
+        # ---------------------------------------------------------
+        # Encrypted Malware
+        # ---------------------------------------------------------
+        elif "encrypted flow timing" in text:
+            matched.append(
+                "Flow duration"
+            )
+
+        elif "encrypted byte volume" in text:
+            matched.append(
+                "Packet sizes"
+            )
+
+        elif "encrypted packet volume" in text:
+            matched.append(
+                "Packet sizes"
+            )
+
+        elif "encrypted traffic rate" in text:
+            matched.append(
+                "Packet timing"
+            )
+
+        elif "encrypted packet rate" in text:
+            matched.append(
+                "Packet timing"
+            )
+
+        elif "tls sni" in text:
+            matched.append(
+                "TLS/QUIC metadata"
+            )
+
+        elif "tls ja3" in text:
+            matched.append(
+                "JA3/JA3S/JA4 when available"
+            )
+
+        elif "tls ja4" in text:
+            matched.append(
+                "JA3/JA3S/JA4 when available"
+            )
+
+    # Remove duplicates while preserving order.
+    matched = list(dict.fromkeys(matched))
 
     evidence_coverage = (
         len(matched) / len(expected)
-        if expected else 0.0
+        if expected
+        else 0.0
     )
 
     alert["observability"] = profile["observability"]
     alert["observability_status"] = profile["status"]
     alert["available_evidence"] = profile["available_evidence"]
     alert["missing_evidence"] = profile["missing_evidence"]
-    alert["evidence_coverage"] = round(evidence_coverage, 2)
+    alert["evidence_coverage"] = round(
+        evidence_coverage,
+        2
+    )
 
     return alert
