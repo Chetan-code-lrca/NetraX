@@ -1,0 +1,7 @@
+﻿Threat,Evidence Available,Evidence Unavailable
+PortScan,"Port/host fan-out; timing; forward packet behaviour","Reverse responses"
+DDoS,"Packet rate; traffic volume; protocol/flag patterns","Victim response"
+C2 Beaconing,"Periodicity; inter-arrival timing; destinations","Response-side behaviour"
+DGA / DNS Tunnelling,"DNS names/metadata; entropy; query characteristics","Reverse-side information"
+Encrypted Malware,"TLS/QUIC metadata; packet sizes; timing","Payload/content"
+Data Exfiltration,"Outbound volume; flow characteristics","Reverse-side timing/flow confirmation"

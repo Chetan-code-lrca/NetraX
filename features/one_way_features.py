@@ -1,0 +1,42 @@
+ORIGINATOR_ONLY = [
+    " Destination Port",
+    " Flow Duration",
+    " Total Fwd Packets",
+    "Total Length of Fwd Packets",
+    " Fwd Packet Length Max",
+    " Fwd Packet Length Min",
+    " Fwd Packet Length Mean",
+    "Fwd Packet Length Std",
+    " Fwd IAT Total",
+    " Fwd IAT Mean",
+    " Fwd IAT Std",
+    " Fwd IAT Max",
+    " Fwd IAT Min",
+    "Fwd PSH Flags",
+    " Fwd URG Flags",
+    " Fwd Header Length",
+    "Fwd Packets/s",
+    " FIN Flag Count",
+    " SYN Flag Count",
+    " RST Flag Count",
+    " PSH Flag Count",
+    " ACK Flag Count",
+    " URG Flag Count",
+    " CWE Flag Count",
+    " ECE Flag Count",
+    " Avg Fwd Segment Size",
+    "Fwd Header Length.1",
+    " Fwd Avg Bytes/Bulk",
+    " Fwd Avg Packets/Bulk",
+    " Fwd Avg Bulk Rate",
+    "Subflow Fwd Packets",
+    "Subflow Fwd Bytes",
+    "Init_Win_bytes_forward",
+    " act_data_pkt_fwd",
+    " min_seg_size_forward",
+]
+
+
+def get_one_way_features(columns):
+    """Return features that can be computed from the observed/originator side."""
+    return [column for column in ORIGINATOR_ONLY if column in columns]

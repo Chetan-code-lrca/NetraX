@@ -1,0 +1,305 @@
+Threat,Feature,Classification,Reason
+PortScan,Flow ID,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Source IP,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Source Port,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Destination IP,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Destination Port,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Protocol,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Timestamp,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Flow Duration,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Total Fwd Packets,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Total Backward Packets,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Total Length of Fwd Packets,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Total Length of Bwd Packets,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Fwd Packet Length Max,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd Packet Length Min,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd Packet Length Mean,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd Packet Length Std,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Bwd Packet Length Max,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd Packet Length Min,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd Packet Length Mean,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd Packet Length Std,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Flow Bytes/s,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Flow Packets/s,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Flow IAT Mean,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Flow IAT Std,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Flow IAT Max,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Flow IAT Min,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Fwd IAT Total,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd IAT Mean,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd IAT Std,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd IAT Max,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd IAT Min,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Bwd IAT Total,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd IAT Mean,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd IAT Std,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd IAT Max,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd IAT Min,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Fwd PSH Flags,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Bwd PSH Flags,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Fwd URG Flags,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Bwd URG Flags,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Fwd Header Length,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Bwd Header Length,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Fwd Packets/s,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Bwd Packets/s,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Min Packet Length,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Max Packet Length,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Packet Length Mean,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Packet Length Std,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Packet Length Variance,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,FIN Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,SYN Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,RST Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,PSH Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,ACK Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,URG Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,CWE Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,ECE Flag Count,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Down/Up Ratio,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Average Packet Size,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Avg Fwd Segment Size,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Avg Bwd Segment Size,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Fwd Header Length.1,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd Avg Bytes/Bulk,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd Avg Packets/Bulk,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Fwd Avg Bulk Rate,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Bwd Avg Bytes/Bulk,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd Avg Packets/Bulk,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Bwd Avg Bulk Rate,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Subflow Fwd Packets,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Subflow Fwd Bytes,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Subflow Bwd Packets,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Subflow Bwd Bytes,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Init_Win_bytes_forward,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Init_Win_bytes_backward,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,act_data_pkt_fwd,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,min_seg_size_forward,Observable,Can be obtained from the originator/forward direction or from endpoint/protocol metadata visible to the sensor.
+PortScan,Active Mean,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Active Std,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Active Max,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Active Min,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Idle Mean,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Idle Std,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Idle Max,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Idle Min,Responder-dependent,The original CICFlowMeter feature depends on bidirectional flow information and cannot be safely obtained from a strict one-way sensor.
+PortScan,Label,Excluded/label,Attack/benign ground-truth label supplied by the dataset; not observable from network traffic.
+DDoS,Flow ID,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Source IP,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Source Port,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Destination IP,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Destination Port,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Protocol,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Timestamp,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Flow Duration,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Total Fwd Packets,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Total Backward Packets,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Total Length of Fwd Packets,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Total Length of Bwd Packets,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Fwd Packet Length Max,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd Packet Length Min,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd Packet Length Mean,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd Packet Length Std,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Bwd Packet Length Max,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd Packet Length Min,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd Packet Length Mean,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd Packet Length Std,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Flow Bytes/s,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Flow Packets/s,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Flow IAT Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Flow IAT Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Flow IAT Max,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Flow IAT Min,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Fwd IAT Total,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd IAT Mean,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd IAT Std,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd IAT Max,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd IAT Min,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Bwd IAT Total,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd IAT Mean,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd IAT Std,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd IAT Max,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd IAT Min,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Fwd PSH Flags,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Bwd PSH Flags,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Fwd URG Flags,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Bwd URG Flags,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Fwd Header Length,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Bwd Header Length,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Fwd Packets/s,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Bwd Packets/s,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Min Packet Length,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Max Packet Length,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Packet Length Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Packet Length Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Packet Length Variance,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,FIN Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,SYN Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,RST Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,PSH Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,ACK Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,URG Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,CWE Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,ECE Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Down/Up Ratio,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Average Packet Size,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Avg Fwd Segment Size,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Avg Bwd Segment Size,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Fwd Header Length.1,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd Avg Bytes/Bulk,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd Avg Packets/Bulk,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Fwd Avg Bulk Rate,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Bwd Avg Bytes/Bulk,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd Avg Packets/Bulk,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Bwd Avg Bulk Rate,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Subflow Fwd Packets,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Subflow Fwd Bytes,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Subflow Bwd Packets,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Subflow Bwd Bytes,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,Init_Win_bytes_forward,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Init_Win_bytes_backward,Responder-dependent,Requires traffic from the reverse/responder direction.
+DDoS,act_data_pkt_fwd,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,min_seg_size_forward,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+DDoS,Active Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Active Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Active Max,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Active Min,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Idle Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Idle Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Idle Max,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+DDoS,Idle Min,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+C2_Botnet,StartTime,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+C2_Botnet,Dur,Responder-dependent,Original flow duration represents the complete flow and may require observing both directions/end of the transaction.
+C2_Botnet,Proto,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+C2_Botnet,SrcAddr,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+C2_Botnet,Sport,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+C2_Botnet,Dir,Observable,Direction metadata describes the observed communication direction; exact encoding should be validated.
+C2_Botnet,DstAddr,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+C2_Botnet,Dport,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+C2_Botnet,State,Discussion/validate,Protocol transaction state may depend on bidirectional traffic; exact one-way observability must be validated.
+C2_Botnet,sTos,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+C2_Botnet,dTos,Responder-dependent,Destination-side Type of Service information can depend on the reverse/responder direction.
+C2_Botnet,TotPkts,Responder-dependent,Original value represents total packets/bytes exchanged and can include both traffic directions.
+C2_Botnet,TotBytes,Responder-dependent,Original value represents total packets/bytes exchanged and can include both traffic directions.
+C2_Botnet,SrcBytes,Observable,Source-to-destination bytes can be obtained when the monitored direction is source to destination.
+C2_Botnet,Label,Excluded/label,"Classification target, not an input feature."
+DGA_DNS_Tunnelling,Timestamp,Observable,Can be obtained from the monitored DNS traffic without requiring responder traffic.
+DGA_DNS_Tunnelling,Source IP,Observable,Can be obtained from the monitored DNS traffic without requiring responder traffic.
+DGA_DNS_Tunnelling,Destination IP,Observable,Can be obtained from the monitored DNS traffic without requiring responder traffic.
+DGA_DNS_Tunnelling,Source Port,Observable,Can be obtained from the monitored DNS traffic without requiring responder traffic.
+DGA_DNS_Tunnelling,Destination Port,Observable,Can be obtained from the monitored DNS traffic without requiring responder traffic.
+DGA_DNS_Tunnelling,Protocol,Observable,Can be obtained from the monitored DNS traffic without requiring responder traffic.
+DGA_DNS_Tunnelling,DNS Query Name,Observable,Can be obtained directly from the observed DNS query without requiring the DNS response.
+DGA_DNS_Tunnelling,DNS Query Name Length,Observable,Can be obtained directly from the observed DNS query without requiring the DNS response.
+DGA_DNS_Tunnelling,DNS Query Name Entropy,Observable,Can be obtained directly from the observed DNS query without requiring the DNS response.
+DGA_DNS_Tunnelling,DNS Query Type,Observable,Can be obtained directly from the observed DNS query without requiring the DNS response.
+DGA_DNS_Tunnelling,DNS Response Code,Responder-dependent,Requires observing DNS response traffic from the resolver/server.
+DGA_DNS_Tunnelling,DNS Record Type,Responder-dependent,Requires observing DNS response traffic from the resolver/server.
+DGA_DNS_Tunnelling,DNS Record Count,Responder-dependent,Requires observing DNS response traffic from the resolver/server.
+DGA_DNS_Tunnelling,DNS Message Length,Discussion/validate,"Can be observable from a DNS message, but whether the dataset value represents only the monitored request or the full exchange must be validated."
+DGA_DNS_Tunnelling,Inter-Arrival Time,Observable,Can be calculated from timestamps of observed DNS queries.
+DGA_DNS_Tunnelling,Query Count,Observable,Can be calculated from observed DNS queries over the monitoring interval.
+DGA_DNS_Tunnelling,Response Count,Responder-dependent,Requires observing DNS response traffic from the resolver/server.
+DGA_DNS_Tunnelling,Label,Excluded/label,"Classification target, not an input feature."
+Encrypted_Malware,Timestamp,Observable,Timestamp is available from observed network traffic.
+Encrypted_Malware,Source IP,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+Encrypted_Malware,Destination IP,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+Encrypted_Malware,Source Port,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+Encrypted_Malware,Destination Port,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+Encrypted_Malware,Protocol,Observable,Can be obtained from the monitored traffic without requiring responder traffic.
+Encrypted_Malware,TLS/QUIC Version,Observable,Protocol/session metadata can be observed without decrypting the payload.
+Encrypted_Malware,Packet Length,Observable,Packet size is observable directly from encrypted traffic.
+Encrypted_Malware,Packet Length Statistics,Discussion/validate,"The underlying measurement can be derived from observed packets, but the dataset's exact definition must be validated for strict one-way use."
+Encrypted_Malware,Inter-Arrival Time,Discussion/validate,"The underlying measurement can be derived from observed packets, but the dataset's exact definition must be validated for strict one-way use."
+Encrypted_Malware,Flow Duration,Discussion/validate,"The underlying measurement can be derived from observed packets, but the dataset's exact definition must be validated for strict one-way use."
+Encrypted_Malware,Forward Packet Count,Observable,Can be calculated from packets observed in the monitored forward direction.
+Encrypted_Malware,Backward Packet Count,Responder-dependent,Requires observing traffic in the reverse/responder direction.
+Encrypted_Malware,Forward Byte Count,Observable,Can be calculated from packets observed in the monitored forward direction.
+Encrypted_Malware,Backward Byte Count,Responder-dependent,Requires observing traffic in the reverse/responder direction.
+Encrypted_Malware,TLS Metadata,Observable,Protocol/session metadata can be observed without decrypting the payload.
+Encrypted_Malware,Payload Content,Responder-dependent,Encrypted payload content is not available as usable content to a passive observer; encryption prevents payload inspection.
+Encrypted_Malware,Malware Label,Excluded/label,"Classification target, not an input feature."
+Data_Exfiltration,Flow ID,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Source IP,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Source Port,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Destination IP,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Destination Port,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Protocol,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Timestamp,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Flow Duration,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Total Fwd Packets,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Total Backward Packets,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Total Length of Fwd Packets,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Total Length of Bwd Packets,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Fwd Packet Length Max,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd Packet Length Min,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd Packet Length Mean,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd Packet Length Std,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Bwd Packet Length Max,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd Packet Length Min,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd Packet Length Mean,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd Packet Length Std,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Flow Bytes/s,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Flow Packets/s,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Flow IAT Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Flow IAT Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Flow IAT Max,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Flow IAT Min,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Fwd IAT Total,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd IAT Mean,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd IAT Std,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd IAT Max,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd IAT Min,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Bwd IAT Total,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd IAT Mean,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd IAT Std,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd IAT Max,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd IAT Min,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Fwd PSH Flags,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Bwd PSH Flags,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Fwd URG Flags,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Bwd URG Flags,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Fwd Header Length,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Bwd Header Length,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Fwd Packets/s,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Bwd Packets/s,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Min Packet Length,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Max Packet Length,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Packet Length Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Packet Length Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Packet Length Variance,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,FIN Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,SYN Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,RST Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,PSH Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,ACK Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,URG Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,CWE Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,ECE Flag Count,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Down/Up Ratio,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Average Packet Size,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Avg Fwd Segment Size,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Avg Bwd Segment Size,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Fwd Header Length.1,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd Avg Bytes/Bulk,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd Avg Packets/Bulk,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Fwd Avg Bulk Rate,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Bwd Avg Bytes/Bulk,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd Avg Packets/Bulk,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Bwd Avg Bulk Rate,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Subflow Fwd Packets,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Subflow Fwd Bytes,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Subflow Bwd Packets,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Subflow Bwd Bytes,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,Init_Win_bytes_forward,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Init_Win_bytes_backward,Responder-dependent,Requires traffic from the reverse/responder direction.
+Data_Exfiltration,act_data_pkt_fwd,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,min_seg_size_forward,Observable,Can be obtained from the monitored/forward direction without requiring responder traffic.
+Data_Exfiltration,Active Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Active Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Active Max,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Active Min,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Idle Mean,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Idle Std,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Idle Max,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
+Data_Exfiltration,Idle Min,Responder-dependent,Original CICFlowMeter value is flow-wide/bidirectional and is not safe for strict one-way observation.
