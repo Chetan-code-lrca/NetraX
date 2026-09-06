@@ -236,7 +236,7 @@ def _run_flow_detectors(df, flow_models):
             )
 
         exfiltration_alert = detect_exfiltration(
-            row,
+            _prepare_exfiltration_features(row),
             flow_id=flow_id,
         )
         alerts.append(
@@ -248,6 +248,39 @@ def _run_flow_detectors(df, flow_models):
         )
 
     return alerts
+
+
+def _prepare_exfiltration_features(row):
+    features = dict(row)
+
+    if "tot_fwd_pkts" in row:
+        features["Total Fwd Packets"] = row["tot_fwd_pkts"]
+
+    if "totlen_fwd_pkts" in row:
+        features["Total Length of Fwd Packets"] = row[
+            "totlen_fwd_pkts"
+        ]
+
+    if "fwd_pkt_len_mean" in row:
+        features["Fwd Packet Length Mean"] = row[
+            "fwd_pkt_len_mean"
+        ]
+
+    if "fwd_pkt_len_max" in row:
+        features["Fwd Packet Length Max"] = row[
+            "fwd_pkt_len_max"
+        ]
+
+    if "fwd_pkts_s" in row:
+        features["Fwd Packets/s"] = row["fwd_pkts_s"]
+
+    if "fwd_iat_mean" in row:
+        features["Fwd IAT Mean"] = row["fwd_iat_mean"]
+
+    if "fwd_iat_std" in row:
+        features["Fwd IAT Std"] = row["fwd_iat_std"]
+
+    return features
 
 
 def _run_c2_detector(df):

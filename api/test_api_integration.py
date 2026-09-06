@@ -145,7 +145,6 @@ def _build_dns_artifacts(vectorizer_path, model_path):
     X = vectorizer.fit_transform(domains)
     model = LogisticRegression(
         max_iter=200,
-        multi_class="auto",
     )
     model.fit(X, labels)
 
@@ -222,9 +221,18 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
                     "src_ip": "10.1.1.10",
                     "dst_ip": "192.168.10.10",
                     "dst_port": 8080,
-                    "tot_fwd_pkts": 2200,
-                    "fwd_pkts_s": 2600,
-                    "totlen_fwd_pkts": 1_400_000,
+                    "tot_fwd_pkts": 300,
+                    "fwd_pkts_s": 1500,
+                    "totlen_fwd_pkts": 300000,
+                    "tot_bwd_pkts": 10,
+                },
+                {
+                    "src_ip": "10.1.1.11",
+                    "dst_ip": "192.168.10.11",
+                    "dst_port": 80,
+                    "tot_fwd_pkts": 2400,
+                    "fwd_pkts_s": 2800,
+                    "totlen_fwd_pkts": 1_800_000,
                     "tot_bwd_pkts": 30,
                 }
             ]
@@ -385,7 +393,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         )
         self.assertEqual(
             payload["flows_processed"],
-            1,
+            2,
         )
         self.assertIsInstance(
             payload["packets_processed"],
