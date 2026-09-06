@@ -419,6 +419,10 @@ def build_model_alerts(
 
         alert["source"] = source
         alert["destination"] = destination
+        alert["alert_id"] = (
+            f"{threat_class.lower()}-"
+            f"{original_index}"
+        )
 
         # Helpful frontend metadata.
         alert["input_row"] = int(
@@ -785,7 +789,7 @@ async def analyze(
                     packets_processed
                 ),
 
-                # True number of positive findings.
+                # True number of positive model findings.
                 "alerts_generated": int(
                     len(alerts)
                 ),

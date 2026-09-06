@@ -36,7 +36,7 @@ function App() {
   useEffect(() => () => abortRef.current?.abort(), [])
 
   const alerts = analysisStatus === ANALYSIS_STATES.COMPLETE ? analysis?.alerts ?? [] : []
-  const selectedAlert = alerts.find((alert) => alert.flow_id === selectedAlertId)
+  const selectedAlert = alerts.find((alert) => alert.alert_id === selectedAlertId)
 
   const handleFile = async (file) => {
     abortRef.current?.abort()
@@ -69,10 +69,10 @@ function App() {
         setAnalysisStatus(ANALYSIS_STATES.ERROR)
       } else {
         setAnalysisStatus(ANALYSIS_STATES.COMPLETE)
-        setSelectedAlertId(normalized.alerts[0]?.flow_id ?? null)
+        setSelectedAlertId(normalized.alerts[0]?.alert_id ?? null)
       }
     } catch (requestError) {
-      if (requestError.name === 'AbortError') { setAnalysisStatus(ANALYSIS_STATES.READY); return }
+      if (requestError.name === 'AbortError') { setAnalysisStatus(selectedFileRef.current ? ANALYSIS_STATES.READY : ANALYSIS_STATES.NO_FILE); return }
       setError(requestError.message)
       setAnalysisStatus(requestError.backendOffline ? ANALYSIS_STATES.BACKEND_OFFLINE : ANALYSIS_STATES.ERROR)
     }

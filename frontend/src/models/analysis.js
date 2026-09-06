@@ -15,11 +15,15 @@ const toAnalysisStatus = (status) => {
   return 'complete'
 }
 
-export function normalizeAlert(alert) {
+export function normalizeAlert(alert, index = 0) {
+  const threatClass = alert.threat_class ?? 'Unclassified'
+  const flowId = alert.flow_id ?? null
+
   return {
+    alert_id: alert.alert_id ?? ([flowId, threatClass, index].filter(Boolean).join(':') || `alert-${index}`),
     timestamp: alert.timestamp ?? null,
-    flow_id: alert.flow_id ?? null,
-    threat_class: alert.threat_class ?? 'Unclassified',
+    flow_id: flowId,
+    threat_class: threatClass,
     confidence: toFiniteNumber(alert.confidence),
     status: alertStatusValues.has(alert.status) ? alert.status : 'INSUFFICIENT',
     evidence: Array.isArray(alert.evidence) ? alert.evidence : [],
@@ -45,7 +49,7 @@ export function normalizeAnalysisResponse(response, selectedFile) {
     alerts_returned: toFiniteNumber(response.alerts_returned),
     alerts_truncated: typeof response.alerts_truncated === 'boolean' ? response.alerts_truncated : null,
     current_stage: response.current_stage ?? null,
-    alerts: Array.isArray(response.alerts) ? response.alerts.map(normalizeAlert) : [],
+    alerts: Array.isArray(response.alerts) ? response.alerts.map((alert, index) => normalizeAlert(alert, index)) : [],
     summary: {
       detected: toFiniteNumber(response.summary?.detected),
       insufficient: toFiniteNumber(response.summary?.insufficient),

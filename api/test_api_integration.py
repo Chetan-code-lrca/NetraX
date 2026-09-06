@@ -248,6 +248,96 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
                 for alert in payload["alerts"]
             )
         )
+        self.assertEqual(
+            len(
+                {
+                    alert["alert_id"]
+                    for alert in payload["alerts"]
+                }
+            ),
+            len(payload["alerts"]),
+        )
+
+    def test_analyze_duplicate_flow_alerts(self):
+        duplicate_csv_path = Path(
+            "/tmp/netrax_duplicate_demo.csv"
+        )
+        pd.DataFrame(
+            [
+                {
+                    "src_ip": "10.10.10.10",
+                    "dst_ip": "192.168.10.10",
+                    "dst_port": 1005,
+                    "tot_fwd_pkts": 1200,
+                    "fwd_pkts_s": 1500,
+                    "totlen_fwd_pkts": 260000,
+                    "Label": "MULTI",
+                },
+                {
+                    "src_ip": "10.10.10.11",
+                    "dst_ip": "192.168.10.11",
+                    "dst_port": 443,
+                    "tot_fwd_pkts": 40,
+                    "fwd_pkts_s": 6,
+                    "totlen_fwd_pkts": 7000,
+                    "Label": "BENIGN",
+                },
+            ]
+        ).to_csv(
+            duplicate_csv_path,
+            index=False,
+        )
+
+        with duplicate_csv_path.open("rb") as handle:
+            response = self.client.post(
+                "/api/analyze",
+                files={
+                    "file": (
+                        duplicate_csv_path.name,
+                        handle,
+                        "text/csv",
+                    )
+                },
+            )
+
+        payload = response.json()
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+        self.assertEqual(
+            payload["alerts_generated"],
+            2,
+        )
+        self.assertEqual(
+            payload["summary"]["detected"],
+            1,
+        )
+        self.assertEqual(
+            payload["summary"]["insufficient"],
+            1,
+        )
+        self.assertEqual(
+            len(payload["alerts"]),
+            2,
+        )
+        self.assertEqual(
+            len(
+                {
+                    alert["alert_id"]
+                    for alert in payload["alerts"]
+                }
+            ),
+            2,
+        )
+        self.assertEqual(
+            {
+                alert["threat_class"]
+                for alert in payload["alerts"]
+            },
+            {"PortScan", "DDoS"},
+        )
 
 
 if __name__ == "__main__":
