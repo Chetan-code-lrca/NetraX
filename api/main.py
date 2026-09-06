@@ -731,6 +731,9 @@ async def analyze(
             detected_flow_count = len(
                 detected_flow_ids
             )
+            raw_alert_count = len(
+                alerts
+            )
 
             insufficient_flow_count = max(
                 len(df)
@@ -789,9 +792,14 @@ async def analyze(
                     packets_processed
                 ),
 
-                # True number of positive model findings.
+                # Unique flows with positive findings.
                 "alerts_generated": int(
-                    len(alerts)
+                    detected_flow_count
+                ),
+
+                # Raw positive findings across models.
+                "findings_generated": int(
+                    raw_alert_count
                 ),
 
                 # Number actually returned to browser.

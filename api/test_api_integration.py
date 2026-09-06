@@ -230,6 +230,10 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             payload["summary"]["detected"],
         )
         self.assertEqual(
+            payload["findings_generated"],
+            25,
+        )
+        self.assertEqual(
             payload["summary"]["insufficient"],
             50
             - payload["summary"]["detected"],
@@ -308,11 +312,15 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         )
         self.assertEqual(
             payload["alerts_generated"],
-            2,
+            1,
         )
         self.assertEqual(
             payload["summary"]["detected"],
             1,
+        )
+        self.assertEqual(
+            payload["findings_generated"],
+            2,
         )
         self.assertEqual(
             payload["summary"]["insufficient"],

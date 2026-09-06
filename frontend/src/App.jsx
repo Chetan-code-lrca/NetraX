@@ -64,12 +64,11 @@ function App() {
       const response = await analyzeTraffic(trafficFile, abortRef.current.signal)
       const normalized = normalizeAnalysisResponse(response, trafficFile)
       setAnalysis(normalized)
-      if (normalized.status === ANALYSIS_STATES.ERROR) {
-        setError(response.message ?? 'Analysis request failed.')
-        setAnalysisStatus(ANALYSIS_STATES.ERROR)
-      } else {
-        setAnalysisStatus(ANALYSIS_STATES.COMPLETE)
+      setAnalysisStatus(normalized.status)
+      if (normalized.status === ANALYSIS_STATES.COMPLETE) {
         setSelectedAlertId(normalized.alerts[0]?.alert_id ?? null)
+      } else if (normalized.status === ANALYSIS_STATES.ERROR) {
+        setError(response.message ?? 'Analysis request failed.')
       }
     } catch (requestError) {
       if (requestError.name === 'AbortError') { setAnalysisStatus(selectedFileRef.current ? ANALYSIS_STATES.READY : ANALYSIS_STATES.NO_FILE); return }
