@@ -304,7 +304,45 @@ def enrich_alert(alert):
             matched.append(
                 "JA3/JA3S/JA4 when available"
             )
-            
+
+        # ---------------------------------------------------------
+        # Data Exfiltration
+        # ---------------------------------------------------------
+        elif "outbound byte volume" in text:
+            matched.append(
+                "Outbound byte volume"
+            )
+
+        elif "forward packet volume" in text:
+            matched.append(
+                "Outbound byte volume"
+            )
+
+        elif "average forward packet size" in text:
+            matched.append(
+                "Packet-size patterns"
+            )
+
+        elif "forward packet size" in text:
+            matched.append(
+                "Packet-size patterns"
+            )
+
+        elif "outbound packet rate" in text:
+            matched.append(
+                "Source-side traffic timing"
+            )
+
+        elif "frequent forward traffic" in text:
+            matched.append(
+                "Source-side traffic timing"
+            )
+
+        elif "outbound traffic timing" in text:
+            matched.append(
+                "Source-side traffic timing"
+            )
+
     # Remove duplicates while preserving order.
     matched = list(dict.fromkeys(matched))
 
