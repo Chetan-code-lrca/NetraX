@@ -64,6 +64,20 @@ DESTINATION_FIELDS = (
     "DstAddr",
 )
 
+FLOW_MODEL_HINT_COLUMNS = {
+    " Destination Port",
+    " Total Fwd Packets",
+    "Fwd Packets/s",
+    "Total Length of Fwd Packets",
+}
+
+
+class FlowExtractionError(Exception):
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
 
 def get_optional_value(row, names):
     for name in names:
@@ -135,18 +149,20 @@ def load_observations(
             timeout=timeout_seconds,
         )
     except subprocess.TimeoutExpired as error:
-        raise TimeoutError(
-            "CICFlowMeter timed out."
+        raise FlowExtractionError(
+            "cicflow_timeout",
+            "CICFlowMeter timed out.",
         ) from error
 
     if result.returncode != 0:
-        raise RuntimeError(
-            "CICFlowMeter failed.\n"
-            + result.stderr[-3000:]
+        raise FlowExtractionError(
+            "cicflow_failed",
+            "CICFlowMeter failed during flow extraction.",
         )
 
     if not flow_csv.exists():
-        raise RuntimeError(
+        raise FlowExtractionError(
+            "cicflow_missing_output",
             "CICFlowMeter completed but did not produce a flow CSV."
         )
 
@@ -362,7 +378,11 @@ def _run_dns_detector(df, vectorizer, model):
 
     for index, series in df.iterrows():
         row = series.to_dict()
-        domain = str(row.get(domain_column, "")).strip()
+        raw_domain = row.get(domain_column)
+        if pd.isna(raw_domain):
+            continue
+
+        domain = str(raw_domain).strip()
         if not domain:
             continue
 
@@ -461,6 +481,9 @@ def run_unified_inference(df):
             flow_models=flow_models,
         )
     except ValueError:
+        if not _looks_like_flow_model_schema(df.columns):
+            raise
+
         flow_models = {
             threat_class: load_model(threat_class)
             for threat_class in FLOW_THREATS
@@ -529,3 +552,11 @@ def run_unified_inference(df):
         },
         "packets_processed": estimate_packet_count(df),
     }
+
+
+def _looks_like_flow_model_schema(columns):
+    return bool(
+        FLOW_MODEL_HINT_COLUMNS.intersection(
+            set(columns)
+        )
+    ) or CICFLOW_REQUIRED.issubset(set(columns))

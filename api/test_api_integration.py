@@ -589,6 +589,100 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             threat_classes,
         )
 
+    def test_pcap_timeout_maps_to_504(self):
+        with mock.patch(
+            "detection.inference.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(
+                cmd=["cicflowmeter"],
+                timeout=120,
+            ),
+        ):
+            with self.pcap_file.open("rb") as handle:
+                response = self.client.post(
+                    "/api/analyze",
+                    files={
+                        "file": (
+                            self.pcap_file.name,
+                            handle,
+                            "application/vnd.tcpdump.pcap",
+                        )
+                    },
+                )
+
+        payload = response.json()
+        self.assertEqual(
+            response.status_code,
+            504,
+        )
+        self.assertEqual(
+            payload["error_code"],
+            "cicflow_timeout",
+        )
+
+    def test_pcap_cicflow_failure_maps_to_500(self):
+        with mock.patch(
+            "detection.inference.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=["cicflowmeter"],
+                returncode=1,
+                stdout="",
+                stderr="failed",
+            ),
+        ):
+            with self.pcap_file.open("rb") as handle:
+                response = self.client.post(
+                    "/api/analyze",
+                    files={
+                        "file": (
+                            self.pcap_file.name,
+                            handle,
+                            "application/vnd.tcpdump.pcap",
+                        )
+                    },
+                )
+
+        payload = response.json()
+        self.assertEqual(
+            response.status_code,
+            500,
+        )
+        self.assertEqual(
+            payload["error_code"],
+            "cicflow_failed",
+        )
+
+    def test_pcap_missing_output_maps_to_500(self):
+        with mock.patch(
+            "detection.inference.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=["cicflowmeter"],
+                returncode=0,
+                stdout="ok",
+                stderr="",
+            ),
+        ):
+            with self.pcap_file.open("rb") as handle:
+                response = self.client.post(
+                    "/api/analyze",
+                    files={
+                        "file": (
+                            self.pcap_file.name,
+                            handle,
+                            "application/vnd.tcpdump.pcap",
+                        )
+                    },
+                )
+
+        payload = response.json()
+        self.assertEqual(
+            response.status_code,
+            500,
+        )
+        self.assertEqual(
+            payload["error_code"],
+            "cicflow_missing_output",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

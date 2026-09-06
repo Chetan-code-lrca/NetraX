@@ -7,7 +7,11 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from detection.inference import load_observations, run_unified_inference
+from detection.inference import (
+    FlowExtractionError,
+    load_observations,
+    run_unified_inference,
+)
 
 
 APP_VERSION = "0.4.0"
@@ -127,46 +131,23 @@ async def analyze(
                     suffix=suffix,
                     workspace=temp_dir_path,
                 )
-            except TimeoutError:
-                return JSONResponse(
-                    status_code=504,
-                    content={
-                        "status": "error",
-                        "message": "CICFlowMeter timed out.",
-                    },
-                )
-            except RuntimeError as error:
-                error_message = str(error)
-                details = None
-                if error_message.startswith(
-                    "CICFlowMeter failed."
-                ):
-                    parts = error_message.split(
-                        "\n",
-                        1,
-                    )
-                    if len(parts) > 1 and parts[1].strip():
-                        details = parts[1].strip()
-
+            except FlowExtractionError as error:
                 logger.warning(
                     "Flow extraction failed for %s: %s",
                     filename,
-                    error_message,
+                    error.message,
                 )
-
                 content = {
                     "status": "error",
-                    "message": (
-                        "Flow extraction failed during "
-                        "traffic conversion."
-                    ),
+                    "message": error.message,
+                    "error_code": error.code,
                 }
-
-                if details:
-                    content["details"] = details
-
                 return JSONResponse(
-                    status_code=500,
+                    status_code=(
+                        504
+                        if error.code == "cicflow_timeout"
+                        else 500
+                    ),
                     content=content,
                 )
 
