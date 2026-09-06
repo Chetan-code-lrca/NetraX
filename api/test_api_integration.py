@@ -1,9 +1,11 @@
 import importlib
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import joblib
 import pandas as pd
@@ -311,6 +313,14 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             index=False,
         )
 
+        cls.pcap_file = (
+            Path(cls.fixtures_dir.name)
+            / "capture_fixture.pcap"
+        )
+        cls.pcap_file.write_bytes(
+            b"pcap-fixture"
+        )
+
         from api import main as api_main
 
         cls.api_main = importlib.reload(
@@ -465,6 +475,69 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
                 == "Encrypted_Malware"
                 for alert in payload["alerts"]
             )
+        )
+
+    def test_pcap_conversion_branch_reachable(self):
+        def fake_cicflow_run(
+            command,
+            capture_output,
+            text,
+            timeout,
+        ):
+            csv_output = Path(
+                command[
+                    command.index("-c")
+                    + 1
+                ]
+            )
+            pd.DataFrame(
+                [
+                    {
+                        "src_ip": "10.9.9.9",
+                        "dst_ip": "192.168.99.9",
+                        "dst_port": 80,
+                        "tot_fwd_pkts": 2000,
+                        "fwd_pkts_s": 2500,
+                        "totlen_fwd_pkts": 900000,
+                        "tot_bwd_pkts": 20,
+                    }
+                ]
+            ).to_csv(
+                csv_output,
+                index=False,
+            )
+            return subprocess.CompletedProcess(
+                args=command,
+                returncode=0,
+                stdout="ok",
+                stderr="",
+            )
+
+        with mock.patch(
+            "detection.inference.subprocess.run",
+            side_effect=fake_cicflow_run,
+        ):
+            with self.pcap_file.open("rb") as handle:
+                response = self.client.post(
+                    "/api/analyze",
+                    files={
+                        "file": (
+                            self.pcap_file.name,
+                            handle,
+                            "application/vnd.tcpdump.pcap",
+                        )
+                    },
+                )
+
+        payload = response.json()
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+        self._assert_required_analysis_fields(payload)
+        self.assertEqual(
+            payload["file_type"],
+            "pcap",
         )
 
 

@@ -136,11 +136,19 @@ async def analyze(
                     },
                 )
             except RuntimeError as error:
+                logger.warning(
+                    "Flow extraction failed for %s: %s",
+                    filename,
+                    str(error),
+                )
                 return JSONResponse(
                     status_code=500,
                     content={
                         "status": "error",
-                        "message": str(error),
+                        "message": (
+                            "Flow extraction failed during "
+                            "traffic conversion."
+                        ),
                     },
                 )
 

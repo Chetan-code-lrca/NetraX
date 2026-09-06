@@ -437,8 +437,9 @@ def run_unified_inference(df):
 
     alerts.sort(
         key=lambda item: (
-            item.get("confidence")
-            or 0.0
+            _safe_float(
+                item.get("confidence")
+            )
         ),
         reverse=True,
     )
