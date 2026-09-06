@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -25,6 +26,15 @@ ALLOWED_SUFFIXES = {
 
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
+# Extra production frontend origins (e.g. a deployed Vercel app) can be added
+# without a code change via a comma-separated NETRAX_ALLOWED_ORIGINS env var,
+# e.g. "https://netrax.vercel.app,https://netrax-git-main-team.vercel.app".
+EXTRA_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("NETRAX_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
 
 app = FastAPI(
     title="NetraX API",
@@ -40,11 +50,14 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        *EXTRA_ALLOWED_ORIGINS,
     ],
+    # Local dev hosts on any port, plus any Vercel preview/production
+    # deployment (*.vercel.app), are allowed without extra configuration.
     allow_origin_regex=(
         r"https?://"
-        r"(localhost|127\.0\.0\.1)"
-        r"(:\d+)?$"
+        r"(localhost|127\.0\.0\.1)(:\d+)?"
+        r"|https://[\w-]+\.vercel\.app"
     ),
     allow_credentials=True,
     allow_methods=["*"],

@@ -12,7 +12,7 @@ import ThreatActivity from './components/ThreatActivity'
 import ThreatModelGrid from './components/ThreatModelGrid'
 import { threatModels } from './data/threatModels'
 import { normalizeAnalysisResponse } from './models/analysis'
-import { analyzeTraffic } from './services/api'
+import { analyzeTraffic, isApiConfigured } from './services/api'
 
 const ANALYSIS_STATES = {
   NO_FILE: 'no_file',
@@ -21,12 +21,13 @@ const ANALYSIS_STATES = {
   COMPLETE: 'complete',
   ERROR: 'error',
   BACKEND_OFFLINE: 'backend_offline',
+  CONFIG_MISSING: 'config_missing',
 }
 
 function App() {
   const [trafficFile, setTrafficFile] = useState(null)
   const [recordCount, setRecordCount] = useState(null)
-  const [analysisStatus, setAnalysisStatus] = useState(ANALYSIS_STATES.NO_FILE)
+  const [analysisStatus, setAnalysisStatus] = useState(isApiConfigured ? ANALYSIS_STATES.NO_FILE : ANALYSIS_STATES.CONFIG_MISSING)
   const [analysis, setAnalysis] = useState(null)
   const [error, setError] = useState('')
   const [selectedAlertId, setSelectedAlertId] = useState(null)
@@ -43,6 +44,7 @@ function App() {
   const selectedAlert = alerts.find((alert) => alert.alert_id === selectedAlertId)
 
   const handleFile = async (file) => {
+    if (!isApiConfigured) { setAnalysisStatus(ANALYSIS_STATES.CONFIG_MISSING); return }
     inFlightRequestRef.current = null
     abortRef.current?.abort()
     selectedFileRef.current = file
@@ -84,15 +86,15 @@ function App() {
       if (inFlightRequestRef.current !== requestToken) return
       if (requestError.name === 'AbortError') { setAnalysisStatus(selectedFileRef.current ? ANALYSIS_STATES.READY : ANALYSIS_STATES.NO_FILE); return }
       setError(requestError.message)
-      setAnalysisStatus(requestError.backendOffline ? ANALYSIS_STATES.BACKEND_OFFLINE : ANALYSIS_STATES.ERROR)
+      setAnalysisStatus(requestError.configMissing ? ANALYSIS_STATES.CONFIG_MISSING : requestError.backendOffline ? ANALYSIS_STATES.BACKEND_OFFLINE : ANALYSIS_STATES.ERROR)
     } finally {
       if (inFlightRequestRef.current === requestToken) inFlightRequestRef.current = null
     }
   }
 
   const stopAnalysis = () => abortRef.current?.abort()
-  const resetAnalysis = () => { inFlightRequestRef.current = null; abortRef.current?.abort(); selectedFileRef.current = null; setTrafficFile(null); setRecordCount(null); setAnalysisStatus(ANALYSIS_STATES.NO_FILE); setAnalysis(null); setError(''); setSelectedAlertId(null) }
-  const headerStatus = analysisStatus === ANALYSIS_STATES.BACKEND_OFFLINE ? 'BACKEND OFFLINE' : analysisStatus === ANALYSIS_STATES.COMPLETE ? 'ANALYSIS COMPLETE' : 'ANALYSIS SERVICE READY'
+  const resetAnalysis = () => { inFlightRequestRef.current = null; abortRef.current?.abort(); selectedFileRef.current = null; setTrafficFile(null); setRecordCount(null); setAnalysisStatus(isApiConfigured ? ANALYSIS_STATES.NO_FILE : ANALYSIS_STATES.CONFIG_MISSING); setAnalysis(null); setError(''); setSelectedAlertId(null) }
+  const headerStatus = analysisStatus === ANALYSIS_STATES.CONFIG_MISSING ? 'CONFIGURATION MISSING' : analysisStatus === ANALYSIS_STATES.BACKEND_OFFLINE ? 'BACKEND OFFLINE' : analysisStatus === ANALYSIS_STATES.COMPLETE ? 'ANALYSIS COMPLETE' : 'ANALYSIS SERVICE READY'
 
   return (
     <div className="app-shell">

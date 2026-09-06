@@ -45,3 +45,8 @@ tools/cicflowmeter/
 # Derived ML datasets
 data/ddos_one_way.csv
 data/portscan_one_way.csv
+
+# Generated analysis output (untracked, produced by running the API/CLI)
+OUTPUT.csv
+**/OUTPUT.csv
+
