@@ -172,12 +172,6 @@ def load_observations(
 def detect_input_contract(df, flow_models):
     columns = set(df.columns)
 
-    if set(C2_FEATURES).issubset(columns):
-        return "c2_behavioral"
-
-    if ENCRYPTED_REQUIRED.issubset(columns):
-        return "encrypted_flow"
-
     if CICFLOW_REQUIRED.issubset(columns):
         return "flow_features"
 
@@ -185,6 +179,12 @@ def detect_input_contract(df, flow_models):
         feature_names = set(model.feature_names_in_)
         if feature_names.issubset(columns):
             return "flow_features"
+
+    if set(C2_FEATURES).issubset(columns):
+        return "c2_behavioral"
+
+    if ENCRYPTED_REQUIRED.issubset(columns):
+        return "encrypted_flow"
 
     if any(name in columns for name in DNS_COLUMNS):
         return "dns_query"
