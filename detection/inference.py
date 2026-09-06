@@ -1,0 +1,575 @@
+import subprocess
+from pathlib import Path
+
+import pandas as pd
+
+from detection.c2.c2_detector import FEATURES as C2_FEATURES
+from detection.c2.c2_detector import c2_score
+from detection.dns_detector import detect_dns, load_dns_model
+from detection.encrypted_malware_detector import (
+    detect_encrypted_malware,
+    load_model as load_encrypted_model,
+)
+from detection.exfiltration_detector import detect_exfiltration
+from detection.model_detector import detect_model, load_model
+from detection.pipeline import build_alert
+from features.cicflow_adapter import adapt_cicflow_row
+
+
+CICFLOWMETER_TIMEOUT_SECONDS = 120
+DEFAULT_CICFLOWMETER_PATH = ".venv-cicflow/bin/cicflowmeter"
+MAX_DASHBOARD_ALERTS = 500
+
+FLOW_THREATS = (
+    "PortScan",
+    "DDoS",
+)
+
+DNS_COLUMNS = (
+    "domain",
+    "query",
+    "dns_query",
+    "qname",
+    "hostname",
+)
+
+ENCRYPTED_REQUIRED = {
+    "bs",
+    "ps",
+    "td",
+}
+
+CICFLOW_REQUIRED = {
+    "dst_port",
+    "tot_fwd_pkts",
+    "fwd_pkts_s",
+    "totlen_fwd_pkts",
+}
+
+SOURCE_FIELDS = (
+    "src_ip",
+    "Src IP",
+    "Source IP",
+    " Source IP",
+    "src",
+    "SrcAddr",
+)
+
+DESTINATION_FIELDS = (
+    "dst_ip",
+    "Dst IP",
+    "Destination IP",
+    " Destination IP",
+    "dst",
+    "DstAddr",
+)
+
+FLOW_MODEL_HINT_COLUMNS = {
+    " Destination Port",
+    " Total Fwd Packets",
+    "Fwd Packets/s",
+    "Total Length of Fwd Packets",
+}
+
+
+class FlowExtractionError(Exception):
+    def __init__(self, code, message, details=None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.details = details
+
+
+def get_optional_value(row, names):
+    for name in names:
+        if name not in row:
+            continue
+        value = row.get(name)
+        if pd.isna(value):
+            continue
+        return value
+    return None
+
+
+def estimate_packet_count(df):
+    candidate_pairs = [
+        (
+            "tot_fwd_pkts",
+            "tot_bwd_pkts",
+        ),
+        (
+            "Total Fwd Packets",
+            " Total Backward Packets",
+        ),
+        (
+            " Total Fwd Packets",
+            " Total Backward Packets",
+        ),
+    ]
+
+    for forward_col, backward_col in candidate_pairs:
+        if forward_col in df.columns and backward_col in df.columns:
+            forward = pd.to_numeric(
+                df[forward_col],
+                errors="coerce",
+            ).fillna(0)
+            backward = pd.to_numeric(
+                df[backward_col],
+                errors="coerce",
+            ).fillna(0)
+            return int((forward + backward).sum())
+
+    return None
+
+
+def load_observations(
+    input_path,
+    suffix,
+    workspace,
+    cicflowmeter_path=DEFAULT_CICFLOWMETER_PATH,
+    timeout_seconds=CICFLOWMETER_TIMEOUT_SECONDS,
+):
+    if suffix == ".csv":
+        return pd.read_csv(input_path), "csv"
+
+    flow_csv = workspace / "flows.csv"
+
+    command = [
+        cicflowmeter_path,
+        "-f",
+        str(input_path),
+        "-c",
+        str(flow_csv),
+    ]
+
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise FlowExtractionError(
+            "cicflow_timeout",
+            "CICFlowMeter timed out.",
+        ) from error
+
+    if result.returncode != 0:
+        details = (result.stderr or "").strip()
+        raise FlowExtractionError(
+            "cicflow_failed",
+            "CICFlowMeter failed during flow extraction.",
+            details=details[-2000:] if details else None,
+        )
+
+    if not flow_csv.exists():
+        raise FlowExtractionError(
+            "cicflow_missing_output",
+            "CICFlowMeter completed but did not produce a flow CSV."
+        )
+
+    return pd.read_csv(flow_csv), suffix.lstrip(".")
+
+
+def detect_input_contract(df, flow_models):
+    columns = set(df.columns)
+
+    if CICFLOW_REQUIRED.issubset(columns):
+        return "flow_features"
+
+    for model in flow_models.values():
+        feature_names = set(model.feature_names_in_)
+        if feature_names.issubset(columns):
+            return "flow_features"
+
+    if set(C2_FEATURES).issubset(columns):
+        return "c2_behavioral"
+
+    if ENCRYPTED_REQUIRED.issubset(columns):
+        return "encrypted_flow"
+
+    if any(name in columns for name in DNS_COLUMNS):
+        return "dns_query"
+
+    raise ValueError(
+        "Unsupported CSV schema for NetraX detectors."
+    )
+
+
+def normalize_alert(alert, row, alert_id):
+    normalized = alert.copy()
+    normalized["alert_id"] = alert_id
+    normalized["source"] = get_optional_value(row, SOURCE_FIELDS)
+    normalized["destination"] = get_optional_value(
+        row,
+        DESTINATION_FIELDS,
+    )
+    return normalized
+
+
+def _prepare_model_features(row, model):
+    feature_names = list(model.feature_names_in_)
+
+    if all(name in row for name in feature_names):
+        return {
+            name: row[name]
+            for name in feature_names
+        }
+
+    return adapt_cicflow_row(
+        row,
+        feature_names,
+    )
+
+
+def _safe_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _run_flow_detectors(df, flow_models):
+    alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
+
+    for index, series in df.iterrows():
+        row = series.to_dict()
+        flow_id = f"flow-{index}"
+
+        for threat_class in FLOW_THREATS:
+            model = flow_models[threat_class]
+            features = _prepare_model_features(row, model)
+            alert = detect_model(
+                threat_class=threat_class,
+                features=features,
+                flow_id=flow_id,
+                model=model,
+            )
+            status = alert["status"]
+            if status == "DETECTED":
+                counts["detected"] += 1
+            elif status == "AMBIGUOUS":
+                counts["ambiguous"] += 1
+            else:
+                counts["insufficient"] += 1
+
+            if status in ("DETECTED", "AMBIGUOUS"):
+                alerts.append(
+                    normalize_alert(
+                        alert,
+                        row,
+                        f"{threat_class.lower()}-{index}",
+                    )
+                )
+
+        exfiltration_alert = detect_exfiltration(
+            _prepare_exfiltration_features(row),
+            flow_id=flow_id,
+        )
+        status = exfiltration_alert["status"]
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
+
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    exfiltration_alert,
+                    row,
+                    f"data_exfiltration-{index}",
+                )
+            )
+
+    return alerts, counts
+
+
+def _prepare_exfiltration_features(row):
+    features = dict(row)
+
+    if "tot_fwd_pkts" in row:
+        features["Total Fwd Packets"] = row["tot_fwd_pkts"]
+
+    if "totlen_fwd_pkts" in row:
+        features["Total Length of Fwd Packets"] = row[
+            "totlen_fwd_pkts"
+        ]
+
+    if "fwd_pkt_len_mean" in row:
+        features["Fwd Packet Length Mean"] = row[
+            "fwd_pkt_len_mean"
+        ]
+
+    if "fwd_pkt_len_max" in row:
+        features["Fwd Packet Length Max"] = row[
+            "fwd_pkt_len_max"
+        ]
+
+    if "fwd_pkts_s" in row:
+        features["Fwd Packets/s"] = row["fwd_pkts_s"]
+
+    if "fwd_iat_mean" in row:
+        features["Fwd IAT Mean"] = row["fwd_iat_mean"]
+
+    if "fwd_iat_std" in row:
+        features["Fwd IAT Std"] = row["fwd_iat_std"]
+
+    return features
+
+
+def _run_c2_detector(df):
+    alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
+
+    for index, series in df.iterrows():
+        row = series.to_dict()
+        features = {
+            name: _safe_float(row.get(name, 0.0))
+            for name in C2_FEATURES
+        }
+        score, status, evidence = c2_score(features)
+        alert = build_alert(
+            threat_class="C2_Beaconing",
+            confidence=score,
+            status=status,
+            evidence=evidence,
+            flow_id=f"c2-{index}",
+        )
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
+
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    alert,
+                    row,
+                    f"c2_beaconing-{index}",
+                )
+            )
+
+    return alerts, counts
+
+
+def _run_dns_detector(df, vectorizer, model):
+    alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
+    domain_column = next(
+        column
+        for column in DNS_COLUMNS
+        if column in df.columns
+    )
+
+    for index, series in df.iterrows():
+        row = series.to_dict()
+        raw_domain = row.get(domain_column)
+        if pd.isna(raw_domain):
+            continue
+
+        domain = str(raw_domain).strip()
+        if not domain:
+            continue
+
+        result = detect_dns(
+            domain,
+            vectorizer=vectorizer,
+            model=model,
+        )
+
+        evidence = list(result["tunnelling_evidence"])
+
+        if result["classification"] in (1, 2):
+            evidence.append("N-gram model anomaly")
+
+        if (
+            result["tunnelling_status"] == "DETECTED"
+            or result["classification"] in (1, 2)
+        ):
+            status = "DETECTED"
+        elif result["tunnelling_status"] == "AMBIGUOUS":
+            status = "AMBIGUOUS"
+        else:
+            status = "INSUFFICIENT"
+
+        confidence = max(
+            float(result["classification_confidence"]),
+            float(result["tunnelling_score"]),
+        )
+
+        alert = build_alert(
+            threat_class="DGA_DNS_Tunneling",
+            confidence=confidence,
+            status=status,
+            evidence=list(dict.fromkeys(evidence)),
+            flow_id=f"dns-{index}",
+        )
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
+
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    alert,
+                    row,
+                    f"dga_dns_tunneling-{index}",
+                )
+            )
+
+    return alerts, counts
+
+
+def _run_encrypted_detector(df, model):
+    alerts = []
+    counts = {
+        "detected": 0,
+        "ambiguous": 0,
+        "insufficient": 0,
+    }
+
+    for index, series in df.iterrows():
+        row = series.to_dict()
+        alert = detect_encrypted_malware(
+            row,
+            flow_id=f"encrypted-{index}",
+            model=model,
+        )
+        status = alert["status"]
+        if status == "DETECTED":
+            counts["detected"] += 1
+        elif status == "AMBIGUOUS":
+            counts["ambiguous"] += 1
+        else:
+            counts["insufficient"] += 1
+
+        if status in ("DETECTED", "AMBIGUOUS"):
+            alerts.append(
+                normalize_alert(
+                    alert,
+                    row,
+                    f"encrypted_malware-{index}",
+                )
+            )
+
+    return alerts, counts
+
+
+def run_unified_inference(df):
+    flow_models = {}
+    columns = set(df.columns)
+    if (
+        _looks_like_flow_model_schema(columns)
+        and not CICFLOW_REQUIRED.issubset(columns)
+    ):
+        flow_models = {
+            threat_class: load_model(threat_class)
+            for threat_class in FLOW_THREATS
+        }
+
+    try:
+        contract = detect_input_contract(
+            df,
+            flow_models=flow_models,
+        )
+    except ValueError:
+        if flow_models:
+            raise
+
+        flow_models = {
+            threat_class: load_model(threat_class)
+            for threat_class in FLOW_THREATS
+        }
+        contract = detect_input_contract(
+            df,
+            flow_models=flow_models,
+        )
+
+    if contract == "flow_features":
+        if not flow_models:
+            flow_models = {
+                threat_class: load_model(threat_class)
+                for threat_class in FLOW_THREATS
+            }
+        alerts, counts = _run_flow_detectors(
+            df,
+            flow_models=flow_models,
+        )
+    elif contract == "c2_behavioral":
+        alerts, counts = _run_c2_detector(df)
+    elif contract == "dns_query":
+        dns_vectorizer, dns_model = load_dns_model()
+        alerts, counts = _run_dns_detector(
+            df,
+            dns_vectorizer,
+            dns_model,
+        )
+    elif contract == "encrypted_flow":
+        encrypted_model = load_encrypted_model()
+        alerts, counts = _run_encrypted_detector(
+            df,
+            encrypted_model,
+        )
+    else:
+        alerts = []
+        counts = {
+            "detected": 0,
+            "ambiguous": 0,
+            "insufficient": 0,
+        }
+
+    alerts.sort(
+        key=lambda item: (
+            _safe_float(
+                item.get("confidence")
+            )
+        ),
+        reverse=True,
+    )
+
+    dashboard_alerts = alerts[:MAX_DASHBOARD_ALERTS]
+
+    return {
+        "contract": contract,
+        "alerts": dashboard_alerts,
+        "alerts_generated": int(len(alerts)),
+        "alerts_returned": int(len(dashboard_alerts)),
+        "alerts_truncated": (
+            len(alerts) > MAX_DASHBOARD_ALERTS
+        ),
+        "summary": {
+            "detected": int(counts["detected"]),
+            "ambiguous": int(counts["ambiguous"]),
+            "insufficient": int(counts["insufficient"]),
+        },
+        "packets_processed": estimate_packet_count(df),
+    }
+
+
+def _looks_like_flow_model_schema(columns):
+    return bool(
+        FLOW_MODEL_HINT_COLUMNS.intersection(
+            set(columns)
+        )
+    ) or CICFLOW_REQUIRED.issubset(set(columns))
