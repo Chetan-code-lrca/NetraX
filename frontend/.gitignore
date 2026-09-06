@@ -12,14 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Env files (never commit secrets/URLs meant for local overrides)
-.env
-.env.*
-!.env.example
-
-# npm cache directories
-.npm-cache*
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

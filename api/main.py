@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 
 from detection.inference import (
     FlowExtractionError,
@@ -71,6 +72,20 @@ def build_analysis_id(digest):
         f"{digest.hexdigest()[:16]}"
     )
 
+def _analyze_file(
+    input_path,
+    suffix,
+    workspace,
+):
+    df, input_type = load_observations(
+        input_path=input_path,
+        suffix=suffix,
+        workspace=workspace,
+    )
+
+    inference = run_unified_inference(df)
+
+    return df, input_type, inference
 
 @app.get("/api/health")
 def health():
@@ -139,28 +154,28 @@ async def analyze(
                     handle.write(chunk)
 
             try:
-                df, input_type = load_observations(
-                    input_path=input_path,
-                    suffix=suffix,
-                    workspace=temp_dir_path,
+                df, input_type, inference = await run_in_threadpool(
+                    _analyze_file,
+                    input_path,
+                    suffix,
+                    temp_dir_path,
                 )
-                inference = run_unified_inference(df)
             except FlowExtractionError as error:
                 logger.warning(
                     "Flow extraction failed for %s: %s",
                     filename,
-                    error.message,
+                    os.error.message,
                 )
                 content = {
                     "status": "error",
-                    "message": error.message,
+                    "message": os.error.message,
                     "error_code": error.code,
                 }
                 if error.details:
                     content["details"] = error.details
                 if error.code == "cicflow_timeout":
                     status_code = 504
-                elif error.code in (
+                elif logging.error.code in (
                     "cicflow_not_found",
                     "model_unavailable",
                 ):

@@ -1,56 +1,36 @@
 # NetraX Frontend
 
-React/Vite dashboard for the NetraX analysis API.
+Production-ready React/Vite dashboard for the NetraX FastAPI service.
 
-## Requirements
+## Local
 
-- Node.js 20+
-- NetraX FastAPI backend running on port `8000` by default
-
-## Install
+Run the backend:
 
 ```bash
-npm install
+cd ~/NetraX
+PYTHONPATH=. python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
-## Run
+Run the frontend:
 
 ```bash
+cd ~/NetraX/frontend
+npm install
 npm run dev
 ```
 
-The frontend sends uploaded `.pcap`, `.pcapng`, and `.csv` files to `POST /api/analyze`.
+Open `http://localhost:5173`.
 
-## API configuration
+The Vite proxy forwards `/api/*` to `http://127.0.0.1:8000`.
 
-The API base URL is controlled by the `VITE_NETRAX_API_URL` Vite environment
-variable:
+CSV uploads must already contain NetraX-compatible flow features. PCAP/PCAPNG uploads are converted by the backend.
 
-- **Development** (`npm run dev`): if `VITE_NETRAX_API_URL` is not set, the
-  app falls back to `http://<current-host>:8000`, so it works out of the box
-  against a locally running backend on `localhost`/`127.0.0.1`.
-- **Production builds** (`npm run build`): the app **never** falls back to
-  localhost. `VITE_NETRAX_API_URL` must be set at build time to the deployed
-  FastAPI backend's public URL, for example:
+## Vercel
 
-  ```
-  VITE_NETRAX_API_URL=https://your-netrax-api.example.com
-  ```
+Set:
 
-  If it is missing, the app shows an "Analysis service unavailable:
-  configuration missing" state instead of silently calling localhost.
-
-On Vercel, set `VITE_NETRAX_API_URL` as a Project Environment Variable
-(Production/Preview) pointing at the deployed backend, then redeploy.
-
-The backend's CORS configuration allows `http://localhost*`/`http://127.0.0.1*`
-during development and any `https://*.vercel.app` origin by default; extra
-production origins can be added via the backend's `NETRAX_ALLOWED_ORIGINS`
-(comma-separated) environment variable.
-
-## Checks
-
-```bash
-npm run build
-npm run lint
+```text
+VITE_NETRAX_API_URL=https://YOUR-PUBLIC-NETRAX-API
 ```
+
+and deploy this directory.

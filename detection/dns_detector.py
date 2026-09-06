@@ -1,15 +1,10 @@
 import joblib
-import os
-from pathlib import Path
 
 from detection.dns_tunnel_detector import dns_tunnel_score
 
 
-MODEL_DIR = Path(
-    os.getenv("NETRAX_MODEL_DIR", "detection")
-)
-VECTORIZER_PATH = MODEL_DIR / "dns_char_vectorizer.joblib"
-MODEL_PATH = MODEL_DIR / "dns_ngram_model.joblib"
+VECTORIZER_PATH = "detection/dns_char_vectorizer.joblib"
+MODEL_PATH = "detection/dns_ngram_model.joblib"
 
 
 def load_dns_model():
@@ -19,11 +14,7 @@ def load_dns_model():
     return vectorizer, model
 
 
-def detect_dns(
-    domain,
-    vectorizer=None,
-    model=None,
-):
+def detect_dns(domain):
     """
     Unified DNS analysis.
 
@@ -32,8 +23,7 @@ def detect_dns(
         - tunnelling evidence score
     """
 
-    if vectorizer is None or model is None:
-        vectorizer, model = load_dns_model()
+    vectorizer, model = load_dns_model()
 
     domain = str(domain).strip().lower()
 
@@ -65,3 +55,4 @@ def detect_dns(
         "tunnelling_evidence": tunnel["evidence"],
         "features": tunnel["features"],
     }
+

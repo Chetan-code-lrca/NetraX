@@ -9,11 +9,14 @@ from detection.c2.c2_detector import FEATURES as C2_FEATURES
 from detection.c2.c2_detector import c2_score
 from detection.dns_detector import detect_dns, load_dns_model
 from detection.encrypted_malware_detector import (
-    detect_encrypted_malware,
+    detect_encrypted_malware_batch,
     load_model as load_encrypted_model,
 )
 from detection.exfiltration_detector import detect_exfiltration
-from detection.model_detector import detect_model, load_model
+from detection.model_detector import (
+    detect_model_batch,
+    load_model,
+)
 from detection.pipeline import build_alert
 from features.cicflow_adapter import adapt_cicflow_row
 
@@ -27,6 +30,31 @@ FLOW_THREATS = (
     "PortScan",
     "DDoS",
 )
+
+SUPPORTED_THREATS = (
+    "PortScan",
+    "DDoS",
+    "C2_Beaconing",
+    "DGA_DNS_Tunneling",
+    "Encrypted_Malware",
+    "Data_Exfiltration",
+)
+
+EXFILTRATION_HINTS = {
+    " Total Fwd Packets",
+    "Total Fwd Packets",
+    "Total Length of Fwd Packets",
+    " Fwd Packet Length Mean",
+    "Fwd Packet Length Mean",
+    " Fwd Packet Length Max",
+    "Fwd Packet Length Max",
+    "Fwd Packets/s",
+    " Fwd Packets/s",
+    " Fwd IAT Mean",
+    "Fwd IAT Mean",
+    " Fwd IAT Std",
+    "Fwd IAT Std",
+}
 
 DNS_COLUMNS = (
     "domain",
@@ -269,6 +297,9 @@ def detect_input_contract(df, flow_models):
     if any(name in columns for name in DNS_COLUMNS):
         return "dns_query"
 
+    if EXFILTRATION_HINTS.intersection(columns):
+        return "flow_features"
+
     raise ValueError(
         "Unsupported CSV schema for NetraX detectors."
     )
@@ -315,20 +346,45 @@ def _run_flow_detectors(df, flow_models):
         "insufficient": 0,
     }
 
-    for index, series in df.iterrows():
-        row = series.to_dict()
-        flow_id = f"flow-{index}"
+    rows = [
+        series.to_dict()
+        for _, series in df.iterrows()
+    ]
 
-        for threat_class in FLOW_THREATS:
-            model = flow_models[threat_class]
-            features = _prepare_model_features(row, model)
-            alert = detect_model(
-                threat_class=threat_class,
-                features=features,
-                flow_id=flow_id,
-                model=model,
+    flow_ids = [
+        f"flow-{index}"
+        for index in df.index
+    ]
+
+    prepared_features = [
+        {
+            threat_class: _prepare_model_features(
+                row,
+                flow_models[threat_class],
             )
+            for threat_class in FLOW_THREATS
+        }
+        for row in rows
+    ]
+
+    for threat_class in FLOW_THREATS:
+        model = flow_models[threat_class]
+
+        feature_rows = [
+            item[threat_class]
+            for item in prepared_features
+        ]
+
+        detector_alerts = detect_model_batch(
+            threat_class=threat_class,
+            feature_rows=feature_rows,
+            flow_ids=flow_ids,
+            model=model,
+        )
+
+        for index, alert in enumerate(detector_alerts):
             status = alert["status"]
+
             if status == "DETECTED":
                 counts["detected"] += 1
             elif status == "AMBIGUOUS":
@@ -340,16 +396,21 @@ def _run_flow_detectors(df, flow_models):
                 alerts.append(
                     normalize_alert(
                         alert,
-                        row,
-                        f"{threat_class.lower()}-{index}",
+                        rows[index],
+                        f"{threat_class.lower()}-{df.index[index]}",
                     )
                 )
 
+    exfiltration_alerts = []
+
+    for index, row in zip(df.index, rows):
         exfiltration_alert = detect_exfiltration(
             _prepare_exfiltration_features(row),
-            flow_id=flow_id,
+            flow_id=f"flow-{index}",
         )
+
         status = exfiltration_alert["status"]
+
         if status == "DETECTED":
             counts["detected"] += 1
         elif status == "AMBIGUOUS":
@@ -358,7 +419,7 @@ def _run_flow_detectors(df, flow_models):
             counts["insufficient"] += 1
 
         if status in ("DETECTED", "AMBIGUOUS"):
-            alerts.append(
+            exfiltration_alerts.append(
                 normalize_alert(
                     exfiltration_alert,
                     row,
@@ -366,8 +427,9 @@ def _run_flow_detectors(df, flow_models):
                 )
             )
 
-    return alerts, counts
+    alerts.extend(exfiltration_alerts)
 
+    return alerts, counts
 
 def _prepare_exfiltration_features(row):
     features = dict(row)
@@ -466,11 +528,7 @@ def _run_dns_detector(df, vectorizer, model):
         if not domain:
             continue
 
-        result = detect_dns(
-            domain,
-            vectorizer=vectorizer,
-            model=model,
-        )
+        result = detect_dns(domain)
 
         evidence = list(result["tunnelling_evidence"])
 
@@ -517,7 +575,6 @@ def _run_dns_detector(df, vectorizer, model):
 
     return alerts, counts
 
-
 def _run_encrypted_detector(df, model):
     alerts = []
     counts = {
@@ -526,14 +583,25 @@ def _run_encrypted_detector(df, model):
         "insufficient": 0,
     }
 
-    for index, series in df.iterrows():
-        row = series.to_dict()
-        alert = detect_encrypted_malware(
-            row,
-            flow_id=f"encrypted-{index}",
-            model=model,
-        )
+    rows = [
+        series.to_dict()
+        for _, series in df.iterrows()
+    ]
+
+    flow_ids = [
+        f"encrypted-{index}"
+        for index in df.index
+    ]
+
+    detector_alerts = detect_encrypted_malware_batch(
+        rows=rows,
+        flow_ids=flow_ids,
+        model=model,
+    )
+
+    for index, alert in enumerate(detector_alerts):
         status = alert["status"]
+
         if status == "DETECTED":
             counts["detected"] += 1
         elif status == "AMBIGUOUS":
@@ -545,13 +613,269 @@ def _run_encrypted_detector(df, model):
             alerts.append(
                 normalize_alert(
                     alert,
-                    row,
-                    f"encrypted_malware-{index}",
+                    rows[index],
+                    f"encrypted_malware-{df.index[index]}",
                 )
             )
 
     return alerts, counts
 
+def validate_alert(alert):
+    """
+    Validate the standardized NetraX alert contract.
+
+    Returns True when the alert satisfies the required schema.
+    Raises ValueError when the alert is invalid.
+    """
+
+    required_fields = {
+        "timestamp",
+        "flow_id",
+        "threat_class",
+        "confidence",
+        "status",
+        "evidence",
+        "observability",
+        "observability_status",
+        "available_evidence",
+        "missing_evidence",
+        "evidence_coverage",
+    }
+
+    missing = required_fields.difference(alert)
+
+    if missing:
+        raise ValueError(
+            f"Alert missing required fields: "
+            f"{sorted(missing)}"
+        )
+
+    if alert["threat_class"] not in SUPPORTED_THREATS:
+        raise ValueError(
+            f"Unsupported threat class: "
+            f"{alert['threat_class']!r}"
+        )
+
+    if alert["status"] not in {
+        "DETECTED",
+        "AMBIGUOUS",
+        "INSUFFICIENT",
+    }:
+        raise ValueError(
+            f"Invalid alert status: "
+            f"{alert['status']!r}"
+        )
+
+    try:
+        confidence = float(
+            alert["confidence"]
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "Alert confidence must be numeric."
+        ) from exc
+
+    if not 0.0 <= confidence <= 1.0:
+        raise ValueError(
+            f"Alert confidence must be in [0, 1], "
+            f"got {confidence}"
+        )
+
+    try:
+        coverage = float(
+            alert["evidence_coverage"]
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "Alert evidence_coverage must be numeric."
+        ) from exc
+
+    if not 0.0 <= coverage <= 1.0:
+        raise ValueError(
+            f"Alert evidence_coverage must be in [0, 1], "
+            f"got {coverage}"
+        )
+
+    if not isinstance(
+        alert["evidence"],
+        list,
+    ):
+        raise ValueError(
+            "Alert evidence must be a list."
+        )
+
+    if not isinstance(
+        alert["available_evidence"],
+        list,
+    ):
+        raise ValueError(
+            "Alert available_evidence must be a list."
+        )
+
+    if not isinstance(
+        alert["missing_evidence"],
+        list,
+    ):
+        raise ValueError(
+            "Alert missing_evidence must be a list."
+        )
+
+    return True
+
+
+def predict(
+    threat_class,
+    features,
+    flow_id="unknown",
+):
+    """
+    Public single-observation NetraX inference interface.
+
+    Each threat is routed to its existing detector implementation.
+    The detector result is passed through the existing alert pipeline,
+    including separability enrichment, and then validated.
+    """
+
+    if threat_class not in SUPPORTED_THREATS:
+        raise ValueError(
+            f"Unsupported threat class: {threat_class!r}"
+        )
+
+    # =====================================================
+    # 1. PortScan / DDoS
+    # =====================================================
+
+    if threat_class in FLOW_THREATS:
+        alert = detect_model(
+            threat_class=threat_class,
+            features=features,
+            flow_id=flow_id,
+        )
+
+        validate_alert(alert)
+        return alert
+
+    # =====================================================
+    # 2. C2 Beaconing
+    # =====================================================
+
+    if threat_class == "C2_Beaconing":
+        numeric_features = {
+            name: _safe_float(
+                features.get(name, 0.0)
+            )
+            for name in C2_FEATURES
+        }
+
+        score, status, evidence = c2_score(
+            numeric_features
+        )
+
+        alert = build_alert(
+            threat_class="C2_Beaconing",
+            confidence=float(score),
+            status=status,
+            evidence=evidence,
+            flow_id=flow_id,
+        )
+
+        validate_alert(alert)
+        return alert
+
+    # =====================================================
+    # 3. DNS / DGA / DNS Tunnelling
+    # =====================================================
+
+    if threat_class == "DGA_DNS_Tunneling":
+        domain = str(features).strip()
+
+        if not domain:
+            raise ValueError(
+                "DNS prediction requires a non-empty domain."
+            )
+
+        # detect_dns() loads its own vectorizer/model.
+        result = detect_dns(domain)
+
+        evidence = list(
+            result.get("tunnelling_evidence", [])
+        )
+
+        if result.get("classification") in (1, 2):
+            evidence.append("N-gram model anomaly")
+
+        if (
+            result.get("tunnelling_status") == "DETECTED"
+            or result.get("classification") in (1, 2)
+        ):
+            status = "DETECTED"
+        elif result.get("tunnelling_status") == "AMBIGUOUS":
+            status = "AMBIGUOUS"
+        else:
+            status = "INSUFFICIENT"
+
+        confidence = max(
+            float(
+                result.get(
+                    "classification_confidence",
+                    0.0,
+                )
+            ),
+            float(
+                result.get(
+                    "tunnelling_score",
+                    0.0,
+                )
+            ),
+        )
+
+        alert = build_alert(
+            threat_class="DGA_DNS_Tunneling",
+            confidence=confidence,
+            status=status,
+            evidence=list(
+                dict.fromkeys(evidence)
+            ),
+            flow_id=flow_id,
+        )
+
+        validate_alert(alert)
+        return alert
+
+    # =====================================================
+    # 4. Encrypted Malware
+    # =====================================================
+
+    if threat_class == "Encrypted_Malware":
+        if not isinstance(features, pd.Series):
+            features = pd.Series(features)
+
+        # detect_encrypted_malware() uses its own model-loading
+        # path, so do not pass model= here.
+        alert = detect_encrypted_malware(
+            features,
+            flow_id=flow_id,
+        )
+
+        validate_alert(alert)
+        return alert
+
+    # =====================================================
+    # 5. Data Exfiltration
+    # =====================================================
+
+    if threat_class == "Data_Exfiltration":
+        alert = detect_exfiltration(
+            features,
+            flow_id=flow_id,
+        )
+
+        validate_alert(alert)
+        return alert
+
+    raise ValueError(
+        f"No prediction route implemented for {threat_class!r}"
+    )
 
 def run_unified_inference(df):
     flow_models = {}
