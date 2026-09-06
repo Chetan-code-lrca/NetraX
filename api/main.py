@@ -142,6 +142,8 @@ async def analyze(
                     "message": error.message,
                     "error_code": error.code,
                 }
+                if error.details:
+                    content["details"] = error.details
                 return JSONResponse(
                     status_code=(
                         504

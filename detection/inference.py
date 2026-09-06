@@ -73,10 +73,11 @@ FLOW_MODEL_HINT_COLUMNS = {
 
 
 class FlowExtractionError(Exception):
-    def __init__(self, code, message):
+    def __init__(self, code, message, details=None):
         super().__init__(message)
         self.code = code
         self.message = message
+        self.details = details
 
 
 def get_optional_value(row, names):
@@ -155,9 +156,11 @@ def load_observations(
         ) from error
 
     if result.returncode != 0:
+        details = (result.stderr or "").strip()
         raise FlowExtractionError(
             "cicflow_failed",
             "CICFlowMeter failed during flow extraction.",
+            details=details[-2000:] if details else None,
         )
 
     if not flow_csv.exists():
@@ -485,10 +488,23 @@ def run_unified_inference(df):
             for threat_class in FLOW_THREATS
         }
 
-    contract = detect_input_contract(
-        df,
-        flow_models=flow_models,
-    )
+    try:
+        contract = detect_input_contract(
+            df,
+            flow_models=flow_models,
+        )
+    except ValueError:
+        if flow_models:
+            raise
+
+        flow_models = {
+            threat_class: load_model(threat_class)
+            for threat_class in FLOW_THREATS
+        }
+        contract = detect_input_contract(
+            df,
+            flow_models=flow_models,
+        )
 
     if contract == "flow_features":
         if not flow_models:
