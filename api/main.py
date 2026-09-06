@@ -131,6 +131,7 @@ async def analyze(
                     suffix=suffix,
                     workspace=temp_dir_path,
                 )
+                inference = run_unified_inference(df)
             except FlowExtractionError as error:
                 logger.warning(
                     "Flow extraction failed for %s: %s",
@@ -144,16 +145,19 @@ async def analyze(
                 }
                 if error.details:
                     content["details"] = error.details
+                if error.code == "cicflow_timeout":
+                    status_code = 504
+                elif error.code in (
+                    "cicflow_not_found",
+                    "model_unavailable",
+                ):
+                    status_code = 503
+                else:
+                    status_code = 500
                 return JSONResponse(
-                    status_code=(
-                        504
-                        if error.code == "cicflow_timeout"
-                        else 500
-                    ),
+                    status_code=status_code,
                     content=content,
                 )
-
-            inference = run_unified_inference(df)
 
             return {
                 "status": "complete",
