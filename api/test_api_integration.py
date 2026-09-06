@@ -292,6 +292,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
                 {
                     "src": "10.3.3.3",
                     "dst": "203.0.113.10",
+                    "hostname": "malicious.example",
                     "bs": 380000,
                     "ps": 2400,
                     "td": 19,
@@ -495,6 +496,13 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             any(
                 alert["threat_class"]
                 == "Encrypted_Malware"
+                for alert in payload["alerts"]
+            )
+        )
+        self.assertFalse(
+            any(
+                alert["threat_class"]
+                == "DGA_DNS_Tunneling"
                 for alert in payload["alerts"]
             )
         )
