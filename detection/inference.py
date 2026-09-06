@@ -1,3 +1,5 @@
+import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -18,6 +20,7 @@ from features.cicflow_adapter import adapt_cicflow_row
 
 CICFLOWMETER_TIMEOUT_SECONDS = 120
 DEFAULT_CICFLOWMETER_PATH = ".venv-cicflow/bin/cicflowmeter"
+CICFLOWMETER_PATH_ENV_VAR = "NETRAX_CICFLOWMETER_PATH"
 MAX_DASHBOARD_ALERTS = 500
 
 FLOW_THREATS = (
@@ -80,6 +83,49 @@ class FlowExtractionError(Exception):
         self.details = details
 
 
+class ModelUnavailableError(FlowExtractionError):
+    """Raised when a detector's trained model artifact is missing."""
+
+
+def _load_model_or_raise(threat_class):
+    try:
+        return load_model(threat_class)
+    except FileNotFoundError as error:
+        raise ModelUnavailableError(
+            "model_unavailable",
+            (
+                f"Trained model for '{threat_class}' is not "
+                "available on this server."
+            ),
+            details=str(error),
+        ) from error
+
+
+def _load_dns_model_or_raise():
+    try:
+        return load_dns_model()
+    except FileNotFoundError as error:
+        raise ModelUnavailableError(
+            "model_unavailable",
+            "Trained DNS model is not available on this server.",
+            details=str(error),
+        ) from error
+
+
+def _load_encrypted_model_or_raise():
+    try:
+        return load_encrypted_model()
+    except FileNotFoundError as error:
+        raise ModelUnavailableError(
+            "model_unavailable",
+            (
+                "Trained encrypted-malware model is not "
+                "available on this server."
+            ),
+            details=str(error),
+        ) from error
+
+
 def get_optional_value(row, names):
     for name in names:
         if name not in row:
@@ -122,6 +168,23 @@ def estimate_packet_count(df):
     return None
 
 
+def resolve_cicflowmeter_path(
+    cicflowmeter_path=DEFAULT_CICFLOWMETER_PATH,
+):
+    env_path = os.environ.get(CICFLOWMETER_PATH_ENV_VAR)
+    if env_path:
+        return env_path
+
+    if Path(cicflowmeter_path).exists():
+        return cicflowmeter_path
+
+    found_on_path = shutil.which("cicflowmeter")
+    if found_on_path:
+        return found_on_path
+
+    return cicflowmeter_path
+
+
 def load_observations(
     input_path,
     suffix,
@@ -133,9 +196,12 @@ def load_observations(
         return pd.read_csv(input_path), "csv"
 
     flow_csv = workspace / "flows.csv"
+    resolved_cicflowmeter_path = resolve_cicflowmeter_path(
+        cicflowmeter_path,
+    )
 
     command = [
-        cicflowmeter_path,
+        resolved_cicflowmeter_path,
         "-f",
         str(input_path),
         "-c",
@@ -153,6 +219,17 @@ def load_observations(
         raise FlowExtractionError(
             "cicflow_timeout",
             "CICFlowMeter timed out.",
+        ) from error
+    except (FileNotFoundError, PermissionError) as error:
+        raise FlowExtractionError(
+            "cicflow_not_found",
+            (
+                "CICFlowMeter executable was not found "
+                f"at '{resolved_cicflowmeter_path}'. Install it "
+                "(pip install cicflowmeter) or set the "
+                f"{CICFLOWMETER_PATH_ENV_VAR} environment "
+                "variable to its path."
+            ),
         ) from error
 
     if result.returncode != 0:
@@ -484,7 +561,7 @@ def run_unified_inference(df):
         and not CICFLOW_REQUIRED.issubset(columns)
     ):
         flow_models = {
-            threat_class: load_model(threat_class)
+            threat_class: _load_model_or_raise(threat_class)
             for threat_class in FLOW_THREATS
         }
 
@@ -498,7 +575,7 @@ def run_unified_inference(df):
             raise
 
         flow_models = {
-            threat_class: load_model(threat_class)
+            threat_class: _load_model_or_raise(threat_class)
             for threat_class in FLOW_THREATS
         }
         contract = detect_input_contract(
@@ -509,7 +586,7 @@ def run_unified_inference(df):
     if contract == "flow_features":
         if not flow_models:
             flow_models = {
-                threat_class: load_model(threat_class)
+                threat_class: _load_model_or_raise(threat_class)
                 for threat_class in FLOW_THREATS
             }
         alerts, counts = _run_flow_detectors(
@@ -519,14 +596,14 @@ def run_unified_inference(df):
     elif contract == "c2_behavioral":
         alerts, counts = _run_c2_detector(df)
     elif contract == "dns_query":
-        dns_vectorizer, dns_model = load_dns_model()
+        dns_vectorizer, dns_model = _load_dns_model_or_raise()
         alerts, counts = _run_dns_detector(
             df,
             dns_vectorizer,
             dns_model,
         )
     elif contract == "encrypted_flow":
-        encrypted_model = load_encrypted_model()
+        encrypted_model = _load_encrypted_model_or_raise()
         alerts, counts = _run_encrypted_detector(
             df,
             encrypted_model,
