@@ -783,8 +783,16 @@ footer .warn { margin-left:auto; color:#c59e61; }
   font-size: 10px;
 }
 
-.toast-view {
+.toast-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.toast-view {
+  margin-top: 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -795,6 +803,26 @@ footer .warn { margin-left:auto; color:#c59e61; }
 
 .toast-view:hover {
   color: #aad2eb;
+}
+
+.toast-ack {
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1px solid #315166;
+  border-radius: 5px;
+  background: #10202c;
+  color: #dcebf4;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.toast-ack:hover {
+  border-color: #4c7f9d;
+  background: #152b3a;
+  color: #eef7fd;
 }
 
 .toast-close {
@@ -831,6 +859,10 @@ footer .warn { margin-left:auto; color:#c59e61; }
     top: 76px;
     right: 12px;
     width: calc(100vw - 24px);
+  }
+
+  .toast-actions {
+    gap: 10px;
   }
 }
 

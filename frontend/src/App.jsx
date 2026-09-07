@@ -384,11 +384,6 @@ function ToastStack({ notifications, alerts, onClose, onView }) {
 }
 
 function ThreatToast({ notification, onClose, onView }) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 7000)
-    return () => clearTimeout(timer)
-  }, [onClose])
-
   return (
     <div className="threat-toast" role="status">
       <div className="toast-icon">!</div>
@@ -403,13 +398,23 @@ function ThreatToast({ notification, onClose, onView }) {
           {Math.round(notification.confidence * 100)}% confidence
         </span>
 
-        <button
-          className="toast-view"
-          type="button"
-          onClick={onView}
-        >
-          View finding
-        </button>
+        <div className="toast-actions">
+          <button
+            className="toast-view"
+            type="button"
+            onClick={onView}
+          >
+            View finding
+          </button>
+
+          <button
+            className="toast-ack"
+            type="button"
+            onClick={onClose}
+          >
+            Acknowledge
+          </button>
+        </div>
       </div>
 
       <button
