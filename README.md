@@ -75,9 +75,9 @@ For the current repository, the safest development setup is:
 - npm
 - A Linux/macOS environment is recommended for the PCAP/CICFlowMeter workflow
 
-The frontend uses Vite. Current Vite releases require Node.js 20.19+ or 22.12+. citeturn0search0turn0search3
+The frontend uses Vite. Use a Node.js release supported by the Vite version installed by `npm install`.
 
-PCAP/PCAPNG analysis requires the `cicflowmeter` command. The current Python CICFlowMeter package requires Python 3.12+. citeturn0search1
+PCAP/PCAPNG analysis requires the `cicflowmeter` command. The current Python CICFlowMeter package requires Python 3.12+.
 
 ## 1. Clone the Repository
 
@@ -245,12 +245,6 @@ The API currently limits uploaded files to **100 MB**.
 The repository includes API integration tests and detection tests. With the Python environment activated, run:
 
 ```bash
-python -m pytest
-```
-
-If `pytest` is not installed:
-
-```bash
 python -m pip install pytest
 python -m pytest
 ```
@@ -279,7 +273,7 @@ detection/
 
 These scripts expect their corresponding datasets at the paths defined inside each script. Do not assume that every dataset referenced by a training script is bundled with this repository; check the script and `data/` contents before starting a training run.
 
-For example, the PortScan and DDoS training scripts write trained models to the `detection/` directory. fileciteturn11file1 fileciteturn11file4
+The existing training scripts produce model artifacts under `detection/`, including the PortScan, DDoS, DNS, DNS-tunneling, and encrypted-malware model files used by the inference code.
 
 ## 10. Important Notes About the Data
 
@@ -288,7 +282,7 @@ NetraX distinguishes between:
 1. **Observable evidence** available from the monitored/forward direction.
 2. **Responder-dependent evidence** that cannot safely be inferred when the observation point is strictly one-way.
 
-The repository includes feature-mapping and threat-evidence metadata under `data/metadata/` to document these constraints. fileciteturn15file4
+The repository includes feature-mapping and threat-evidence metadata under `data/metadata/` to document these constraints.
 
 ## 11. Deployment / CORS Configuration
 
