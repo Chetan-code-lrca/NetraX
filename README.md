@@ -1,123 +1,91 @@
 # NetraX
 
-**NetraX** is a passive cyber-threat detection system designed for environments where traffic is observed in a **strictly one-way direction**.
+NetraX is a passive cyber-threat detection system for environments where traffic is observed in a strictly one-way direction. It was developed around Smart India Hackathon problem statement SIH26145.
 
-It analyzes traffic evidence available inside a monitoring enclave and avoids assuming that reverse-direction or responder-side information exists. The project was developed for **Smart India Hackathon problem statement SIH26145**.
+The system combines flow-feature extraction, threat-specific detectors, and a One-Way Threat Separability Engine. Alerts are classified as `DETECTABLE`, `WEAKLY-SEPARABLE`, or `NOT-SEPARABLE` according to the evidence available from the observed direction.
 
-> **Project status:** Prototype / active development.
-
-## What NetraX Does
-
-NetraX currently supports detection and analysis for:
+## Detects
 
 - Port scanning
 - DDoS traffic
 - C2 / botnet beaconing
-- DNS-based threats and tunneling
+- DNS threats and tunneling
 - Encrypted-malware indicators
 - Data-exfiltration indicators
-
-The detection pipeline combines feature extraction, threat-specific detectors/models, and the **One-Way Threat Separability Engine**. Alerts are enriched with an evidence-aware classification:
-
-- `DETECTABLE` — the available one-way evidence is sufficient
-- `WEAKLY-SEPARABLE` — evidence exists, but confidence is limited
-- `NOT-SEPARABLE` — the available one-way observation cannot reliably establish the threat
-
-This is an important design constraint: NetraX is intended to avoid presenting conclusions as certain when the required evidence is unavailable.
 
 ## Architecture
 
 ```text
-                 One-way traffic / captured data
-                              |
-                              v
-                    Feature extraction
-                              |
-                              v
-                    Threat detection
-                              |
-                              v
-              One-Way Threat Separability Engine
-                              |
-                              v
-                    Evidence-aware alerts
-                              |
-                 +------------+------------+
-                 |                         |
-                 v                         v
-            FastAPI API              React/Vite UI
+traffic / PCAP / CSV
+        │
+        ▼
+feature extraction
+        │
+        ▼
+threat detection
+        │
+        ▼
+one-way separability
+        │
+        ▼
+evidence-aware alerts
+        │
+   ┌────┴────┐
+   ▼         ▼
+FastAPI    React/Vite
 ```
 
-The repository contains the backend API, detection models and training scripts, feature extraction/streaming code, metadata, and the React/Vite dashboard.
-
-## Repository Structure
+## Repository structure
 
 ```text
 NetraX/
-├── api/                 # FastAPI service and API integration tests
-├── detection/           # Detection logic, trained models, training/evaluation scripts
-├── features/            # Feature extraction and feature adapters
-├── separability/        # One-way evidence/separability logic
-├── streaming/           # Replay, CSV, C2 and streaming pipeline components
-├── data/                # Dataset metadata and project data
-├── frontend/            # React + Vite dashboard
+├── api/
+├── detection/
+├── features/
+├── separability/
+├── streaming/
+├── data/metadata/
+├── frontend/
 └── README.md
 ```
 
 ## Requirements
 
-For the current repository, the safest development setup is:
-
 - Git
-- **Python 3.12+**
-- `pip` and `venv`
-- **Node.js 20.19+** (or Node.js 22.12+)
-- npm
-- A Linux/macOS environment is recommended for the PCAP/CICFlowMeter workflow
+- Python 3.12+
+- Node.js and npm for the dashboard
+- CICFlowMeter for PCAP/PCAPNG conversion
 
-The frontend uses Vite. Use a Node.js release supported by the Vite version installed by `npm install`.
+## Setup
 
-PCAP/PCAPNG analysis requires the `cicflowmeter` command. The current Python CICFlowMeter package requires Python 3.12+.
-
-## 1. Clone the Repository
+Clone the repository:
 
 ```bash
 git clone https://github.com/Chetan-code-lrca/NetraX.git
 cd NetraX
 ```
 
-## 2. Set Up the Python Environment
-
-Create and activate a virtual environment:
-
-### Linux / macOS
+Create the Python environment:
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest
 ```
 
-### Windows PowerShell
+For Windows PowerShell:
 
 ```powershell
 py -3.12 -m venv .venv
 .venv\Scripts\Activate.ps1
-```
-
-Install the Python packages used by the API and detection pipeline:
-
-```bash
 python -m pip install --upgrade pip
-python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib
+python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest
 ```
 
-> The repository currently does not contain a `requirements.txt`/lock file, so dependencies are installed explicitly here rather than pretending there is a reproducible dependency lock.
+### CICFlowMeter
 
-## 3. Install CICFlowMeter for PCAP/PCAPNG Input
-
-NetraX invokes a `cicflowmeter` executable when a PCAP/PCAPNG file is uploaded. The backend looks for it at `.venv-cicflow/bin/cicflowmeter` by default and also supports the `NETRAX_CICFLOWMETER_PATH` environment variable.
-
-A convenient isolated setup is:
+PCAP and PCAPNG uploads are converted to flow features with CICFlowMeter. The backend looks for the executable at `.venv-cicflow/bin/cicflowmeter` by default.
 
 ```bash
 python3.12 -m venv .venv-cicflow
@@ -127,62 +95,30 @@ python -m pip install cicflowmeter
 deactivate
 ```
 
-Verify it:
-
-```bash
-.venv-cicflow/bin/cicflowmeter --help
-```
-
-If the executable is installed somewhere else, point NetraX to it:
+You can override the path with:
 
 ```bash
 export NETRAX_CICFLOWMETER_PATH=/absolute/path/to/cicflowmeter
 ```
 
-On Windows, use the equivalent environment-variable syntax and provide the path to the installed executable. The default `.venv-cicflow/bin/cicflowmeter` path is Unix-style.
+## Run the API
 
-## 4. Run the Backend
-
-From the repository root, with the main `.venv` activated:
+From the repository root:
 
 ```bash
 PYTHONPATH=. python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
 ```
 
-The API will be available at:
+Useful endpoints:
 
-- API: `http://127.0.0.1:8000`
-- Health check: `http://127.0.0.1:8000/api/health`
-- FastAPI documentation: `http://127.0.0.1:8000/docs`
-
-Check the health endpoint:
-
-```bash
-curl http://127.0.0.1:8000/api/health
+```text
+http://127.0.0.1:8000/api/health
+http://127.0.0.1:8000/docs
 ```
 
-Expected response shape:
+## Run the dashboard
 
-```json
-{
-  "status": "ok",
-  "service": "netrax-api",
-  "version": "0.4.0"
-}
-```
-
-### Windows PowerShell
-
-If `PYTHONPATH=.` is not accepted by your shell, use:
-
-```powershell
-$env:PYTHONPATH = "."
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
-```
-
-## 5. Run the Frontend
-
-Open a second terminal:
+In a second terminal:
 
 ```bash
 cd frontend
@@ -190,45 +126,11 @@ npm install
 npm run dev
 ```
 
-Open:
+Open `http://localhost:5173`.
 
-```text
-http://localhost:5173
-```
+The Vite development server proxies `/api/*` to the local FastAPI service.
 
-The Vite development server proxies `/api/*` requests to the local FastAPI service.
-
-Keep the backend running on port `8000` while using the dashboard.
-
-## 6. Build the Frontend for Production
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-To preview the production build locally:
-
-```bash
-npm run preview
-```
-
-## 7. Using the API Directly
-
-The main analysis endpoint accepts a file upload:
-
-```text
-POST /api/analyze
-```
-
-Supported upload types:
-
-- `.pcap`
-- `.pcapng`
-- `.csv`
-
-Example:
+## Analyze a file through the API
 
 ```bash
 curl -X POST \
@@ -236,121 +138,40 @@ curl -X POST \
   http://127.0.0.1:8000/api/analyze
 ```
 
-For CSV input, the file must contain the NetraX-compatible flow features expected by the detection pipeline. PCAP/PCAPNG files are converted to flow features by CICFlowMeter before inference.
+Supported uploads:
 
-The API currently limits uploaded files to **100 MB**.
+- `.pcap`
+- `.pcapng`
+- `.csv`
 
-## 8. Tests
+CSV files must already contain the flow features expected by the detectors. Uploaded files are limited to 100 MB by the API.
 
-The repository includes API integration tests and detection tests. With the Python environment activated, run:
+## Tests
 
 ```bash
-python -m pip install pytest
 python -m pytest
 ```
 
-You can also run the API integration test directly:
+The API integration test can also be run directly:
 
 ```bash
 python -m pytest api/test_api_integration.py
 ```
 
-## 9. Model Training and Evaluation
+## Model training
 
-The `detection/` directory contains scripts for training/evaluating several detectors, including:
+Training and evaluation scripts live under `detection/`, including PortScan, DDoS, DNS, DNS tunneling, encrypted-malware, and CICIDS evaluation workflows. Dataset paths are defined by the individual scripts, while threat and feature mappings are kept under `data/metadata/`.
 
-```text
-detection/
-├── train_portscan.py
-├── train_ddos.py
-├── train_dns.py
-├── train_dns_v2.py
-├── train_dns_ngrams.py
-├── train_dns_tunnel.py
-├── train_encrypted.py
-└── evaluate_cicids.py
-```
+## Configuration
 
-These scripts expect their corresponding datasets at the paths defined inside each script. Do not assume that every dataset referenced by a training script is bundled with this repository; check the script and `data/` contents before starting a training run.
+The API supports `NETRAX_ALLOWED_ORIGINS` for additional frontend origins and `NETRAX_CICFLOWMETER_PATH` for a custom CICFlowMeter executable.
 
-The existing training scripts produce model artifacts under `detection/`, including the PortScan, DDoS, DNS, DNS-tunneling, and encrypted-malware model files used by the inference code.
+## Security and scope
 
-## 10. Important Notes About the Data
+NetraX is a passive analysis project. It is designed to observe traffic rather than send probes or mitigation commands into the monitored network.
 
-NetraX distinguishes between:
+Use only traffic captures and datasets you are authorized to process.
 
-1. **Observable evidence** available from the monitored/forward direction.
-2. **Responder-dependent evidence** that cannot safely be inferred when the observation point is strictly one-way.
+## Project status
 
-The repository includes feature-mapping and threat-evidence metadata under `data/metadata/` to document these constraints.
-
-## 11. Deployment / CORS Configuration
-
-The FastAPI service allows the local Vite development origins by default. Additional frontend origins can be supplied through:
-
-```bash
-export NETRAX_ALLOWED_ORIGINS="https://your-frontend.example.com"
-```
-
-Multiple origins can be comma-separated:
-
-```bash
-export NETRAX_ALLOWED_ORIGINS="https://example.com,https://preview.example.com"
-```
-
-For a deployed frontend, set the frontend's API URL according to the deployment environment. The frontend README contains the Vercel-specific configuration.
-
-## 12. Troubleshooting
-
-### `ModuleNotFoundError`
-
-Make sure the main virtual environment is activated and reinstall the Python dependencies:
-
-```bash
-python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest
-```
-
-Run the backend from the repository root with `PYTHONPATH=.`.
-
-### `cicflowmeter` not found
-
-Check the default executable:
-
-```bash
-ls -l .venv-cicflow/bin/cicflowmeter
-```
-
-Or configure an explicit path:
-
-```bash
-export NETRAX_CICFLOWMETER_PATH=/absolute/path/to/cicflowmeter
-```
-
-### Frontend cannot reach the API
-
-Confirm that:
-
-1. The backend is running on port `8000`.
-2. `http://127.0.0.1:8000/api/health` returns `status: ok`.
-3. The frontend is running on port `5173`.
-4. You started the frontend from `frontend/`.
-
-### PCAP upload fails
-
-PCAP/PCAPNG processing depends on CICFlowMeter. Check that the executable works independently before debugging the NetraX API.
-
-### CSV upload fails
-
-A generic CSV is not necessarily a valid NetraX input. The CSV must contain the flow features expected by the relevant detector/model.
-
-## Security and Scope
-
-NetraX is a **passive analysis prototype**. It does not send probes, handshakes, queries, or mitigation commands back into the production network as part of its detection design.
-
-Do not use traffic captures or datasets that you are not authorized to process. When testing with real network traffic, follow applicable organizational, privacy, and security requirements.
-
-## Project Status
-
-NetraX is under active development. APIs, models, feature mappings, datasets, and deployment procedures may change as the project evolves.
-
-For the most reliable setup, use the commands in this README together with the current repository contents rather than relying on older examples or screenshots.
+NetraX is under active development. Detection models, feature mappings, APIs, and deployment configuration may change as the project evolves.
