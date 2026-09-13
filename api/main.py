@@ -27,9 +27,6 @@ ALLOWED_SUFFIXES = {
 
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
-# Extra production frontend origins (e.g. a deployed Vercel app) can be added
-# without a code change via a comma-separated NETRAX_ALLOWED_ORIGINS env var,
-# e.g. "https://netrax.vercel.app,https://netrax-git-main-team.vercel.app".
 EXTRA_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get("NETRAX_ALLOWED_ORIGINS", "").split(",")
@@ -40,9 +37,7 @@ EXTRA_ALLOWED_ORIGINS = [
 app = FastAPI(
     title="NetraX API",
     version=APP_VERSION,
-    description=(
-        "Passive one-way cyber threat analysis API"
-    ),
+    description="Passive one-way cyber threat analysis API",
 )
 
 
@@ -53,8 +48,6 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         *EXTRA_ALLOWED_ORIGINS,
     ],
-    # Local dev hosts on any port, plus any Vercel preview/production
-    # deployment (*.vercel.app), are allowed without extra configuration.
     allow_origin_regex=(
         r"https?://"
         r"(localhost|127\.0\.0\.1)(:\d+)?"
@@ -67,16 +60,10 @@ app.add_middleware(
 
 
 def build_analysis_id(digest):
-    return (
-        "analysis-"
-        f"{digest.hexdigest()[:16]}"
-    )
+    return f"analysis-{digest.hexdigest()[:16]}"
 
-def _analyze_file(
-    input_path,
-    suffix,
-    workspace,
-):
+
+def _analyze_file(input_path, suffix, workspace):
     df, input_type = load_observations(
         input_path=input_path,
         suffix=suffix,
@@ -86,6 +73,7 @@ def _analyze_file(
     inference = run_unified_inference(df)
 
     return df, input_type, inference
+
 
 @app.get("/api/health")
 def health():
@@ -97,13 +85,8 @@ def health():
 
 
 @app.post("/api/analyze")
-async def analyze(
-    file: UploadFile = File(...),
-):
-    filename = (
-        file.filename
-        or "uploaded_traffic"
-    )
+async def analyze(file: UploadFile = File(...)):
+    filename = file.filename or "uploaded_traffic"
     suffix = Path(filename).suffix.lower()
 
     if suffix not in ALLOWED_SUFFIXES:
@@ -111,24 +94,17 @@ async def analyze(
             status_code=400,
             content={
                 "status": "error",
-                "message": (
-                    "Unsupported file type. "
-                    "Use PCAP, PCAPNG or CSV."
-                ),
+                "message": "Unsupported file type. Use PCAP, PCAPNG or CSV.",
             },
         )
 
     try:
-        with TemporaryDirectory(
-            prefix="netrax_"
-        ) as temp_dir:
+        with TemporaryDirectory(prefix="netrax_") as temp_dir:
             temp_dir_path = Path(temp_dir)
             input_path = temp_dir_path / filename
 
             analysis_digest = hashlib.sha256()
-            analysis_digest.update(
-                filename.encode("utf-8")
-            )
+            analysis_digest.update(filename.encode("utf-8"))
 
             bytes_written = 0
 
@@ -144,9 +120,7 @@ async def analyze(
                             status_code=413,
                             content={
                                 "status": "error",
-                                "message": (
-                                    "Uploaded file is too large."
-                                ),
+                                "message": "Uploaded file is too large.",
                             },
                         )
 
@@ -164,24 +138,26 @@ async def analyze(
                 logger.warning(
                     "Flow extraction failed for %s: %s",
                     filename,
-                    os.error.message,
+                    error.message,
                 )
                 content = {
                     "status": "error",
-                    "message": os.error.message,
+                    "message": error.message,
                     "error_code": error.code,
                 }
                 if error.details:
                     content["details"] = error.details
+
                 if error.code == "cicflow_timeout":
                     status_code = 504
-                elif logging.error.code in (
+                elif error.code in (
                     "cicflow_not_found",
                     "model_unavailable",
                 ):
                     status_code = 503
                 else:
                     status_code = 500
+
                 return JSONResponse(
                     status_code=status_code,
                     content=content,
@@ -189,40 +165,24 @@ async def analyze(
 
             return {
                 "status": "complete",
-                "analysis_id": build_analysis_id(
-                    analysis_digest
-                ),
+                "analysis_id": build_analysis_id(analysis_digest),
                 "filename": filename,
                 "file_type": input_type,
                 "flows_processed": int(len(df)),
-                "packets_processed": inference[
-                    "packets_processed"
-                ],
-                "alerts_generated": inference[
-                    "alerts_generated"
-                ],
-                "alerts_returned": inference[
-                    "alerts_returned"
-                ],
-                "alerts_truncated": inference[
-                    "alerts_truncated"
-                ],
+                "packets_processed": inference["packets_processed"],
+                "alerts_generated": inference["alerts_generated"],
+                "alerts_returned": inference["alerts_returned"],
+                "alerts_truncated": inference["alerts_truncated"],
                 "summary": inference["summary"],
                 "alerts": inference["alerts"],
             }
 
     except Exception:
-        logger.exception(
-            "Traffic analysis failed for %s",
-            filename,
-        )
+        logger.exception("Traffic analysis failed for %s", filename)
         return JSONResponse(
             status_code=500,
             content={
                 "status": "error",
-                "message": (
-                    "Traffic analysis failed "
-                    "inside the analysis service."
-                ),
+                "message": "Traffic analysis failed inside the analysis service.",
             },
         )
