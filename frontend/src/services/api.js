@@ -1,7 +1,15 @@
 const API_BASE = import.meta.env.VITE_NETRAX_API_URL?.trim() || ''
 
 function url(path) {
-  return API_BASE ? `${API_BASE}${path}` : path
+  if (API_BASE) return `${API_BASE}${path}`
+
+  if (import.meta.env.PROD) {
+    throw new Error(
+      'NetraX API is not configured for this deployment. Set VITE_NETRAX_API_URL to the deployed FastAPI service.'
+    )
+  }
+
+  return path
 }
 
 async function json(response) {
