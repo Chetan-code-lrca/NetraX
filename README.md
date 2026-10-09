@@ -71,7 +71,7 @@ Create the Python environment:
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest
+python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest httpx2
 ```
 
 For Windows PowerShell:
@@ -80,7 +80,7 @@ For Windows PowerShell:
 py -3.12 -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest
+python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest httpx2
 ```
 
 ### CICFlowMeter
@@ -164,7 +164,7 @@ Training and evaluation scripts live under `detection/`, including PortScan, DDo
 
 ## Configuration
 
-The API supports `NETRAX_ALLOWED_ORIGINS` for additional frontend origins and `NETRAX_CICFLOWMETER_PATH` for a custom CICFlowMeter executable.
+The API supports `NETRAX_ALLOWED_ORIGINS` for additional frontend origins, `NETRAX_CICFLOWMETER_PATH` for a custom CICFlowMeter executable, and `NETRAX_MODEL_DIR` for the directory containing inference model artifacts. When unset, model files are loaded from `detection/`.
 
 ## Security and scope
 

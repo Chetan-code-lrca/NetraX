@@ -2,6 +2,7 @@ import joblib
 import pandas as pd
 
 from detection.pipeline import build_alert
+from detection.model_paths import get_model_path
 
 
 MODELS = {
@@ -15,7 +16,7 @@ def load_model(threat_class):
     if threat_class not in MODELS:
         raise ValueError(f"No model available for {threat_class}")
 
-    return joblib.load(MODELS[threat_class])
+    return joblib.load(get_model_path(MODELS[threat_class]))
 
 
 def _build_model_alert(
