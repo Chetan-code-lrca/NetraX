@@ -399,11 +399,11 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         )
 
     def test_upload_filename_cannot_escape_workspace(self):
-        upload_bytes = b"src_ip,dst_ip\\n10.0.0.1,10.0.0.2\\n"
+        upload_bytes = b"src_ip,dst_ip\n10.0.0.1,10.0.0.2\n"
         malicious_names = (
             "../../netrax-outside.csv",
             "/tmp/netrax-outside.csv",
-            r"..\\..\\netrax-outside.csv",
+            r"..\..\netrax-outside.csv",
         )
 
         for supplied_name in malicious_names:
@@ -444,7 +444,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
                 self.assertEqual(response.status_code, 200, response.text)
                 self.assertEqual(
                     response.json()["filename"],
-                    Path(supplied_name.replace("\\\\", "/")).name,
+                    Path(supplied_name.replace("\\", "/")).name,
                 )
 
     def test_health(self):
