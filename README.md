@@ -71,7 +71,7 @@ Create the Python environment:
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest
+python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest httpx2
 ```
 
 For Windows PowerShell:
@@ -80,7 +80,7 @@ For Windows PowerShell:
 py -3.12 -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest
+python -m pip install fastapi uvicorn python-multipart pandas numpy scikit-learn joblib pytest httpx2
 ```
 
 ### CICFlowMeter
