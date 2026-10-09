@@ -164,7 +164,7 @@ Training and evaluation scripts live under `detection/`, including PortScan, DDo
 
 ## Configuration
 
-The API supports `NETRAX_ALLOWED_ORIGINS` for additional frontend origins and `NETRAX_CICFLOWMETER_PATH` for a custom CICFlowMeter executable.
+The API supports `NETRAX_ALLOWED_ORIGINS` for additional frontend origins, `NETRAX_CICFLOWMETER_PATH` for a custom CICFlowMeter executable, and `NETRAX_MODEL_DIR` for the directory containing inference model artifacts. When unset, model files are loaded from `detection/`.
 
 ## Security and scope
 
