@@ -86,7 +86,10 @@ def health():
 
 @app.post("/api/analyze")
 async def analyze(file: UploadFile = File(...)):
-    filename = file.filename or "uploaded_traffic"
+    supplied_filename = file.filename or "uploaded_traffic"
+    # Treat both POSIX and Windows separators as path separators. The uploaded
+    # filename is untrusted metadata and must never be used as a filesystem path.
+    filename = Path(supplied_filename.replace("\\", "/")).name or "uploaded_traffic"
     suffix = Path(filename).suffix.lower()
 
     if suffix not in ALLOWED_SUFFIXES:
@@ -101,7 +104,8 @@ async def analyze(file: UploadFile = File(...)):
     try:
         with TemporaryDirectory(prefix="netrax_") as temp_dir:
             temp_dir_path = Path(temp_dir)
-            input_path = temp_dir_path / filename
+            # Use a server-generated path; preserve only the already-validated suffix.
+            input_path = temp_dir_path / f"upload{suffix}"
 
             analysis_digest = hashlib.sha256()
             analysis_digest.update(filename.encode("utf-8"))
