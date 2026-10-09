@@ -398,6 +398,55 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             required.issubset(payload.keys())
         )
 
+    def test_upload_filename_cannot_escape_workspace(self):
+        upload_bytes = b"src_ip,dst_ip\\n10.0.0.1,10.0.0.2\\n"
+        malicious_names = (
+            "../../netrax-outside.csv",
+            "/tmp/netrax-outside.csv",
+            r"..\\..\\netrax-outside.csv",
+        )
+
+        for supplied_name in malicious_names:
+            with self.subTest(filename=supplied_name):
+                def inspect_upload(input_path, suffix, workspace):
+                    input_path = Path(input_path)
+                    workspace = Path(workspace)
+                    self.assertEqual(suffix, ".csv")
+                    self.assertEqual(input_path.name, "upload.csv")
+                    self.assertEqual(input_path.resolve().parent, workspace.resolve())
+                    self.assertTrue(input_path.is_file())
+                    self.assertEqual(input_path.read_bytes(), upload_bytes)
+                    return pd.DataFrame(), "csv", {
+                        "packets_processed": None,
+                        "alerts_generated": 0,
+                        "alerts_returned": 0,
+                        "alerts_truncated": False,
+                        "summary": {},
+                        "alerts": [],
+                    }
+
+                with mock.patch.object(
+                    self.api_main,
+                    "_analyze_file",
+                    side_effect=inspect_upload,
+                ):
+                    response = self.client.post(
+                        "/api/analyze",
+                        files={
+                            "file": (
+                                supplied_name,
+                                upload_bytes,
+                                "text/csv",
+                            )
+                        },
+                    )
+
+                self.assertEqual(response.status_code, 200, response.text)
+                self.assertEqual(
+                    response.json()["filename"],
+                    Path(supplied_name.replace("\\\\", "/")).name,
+                )
+
     def test_health(self):
         response = self.client.get(
             "/api/health"
