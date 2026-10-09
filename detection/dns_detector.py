@@ -1,6 +1,7 @@
 import joblib
 
 from detection.dns_tunnel_detector import dns_tunnel_score
+from detection.model_paths import get_model_path
 
 
 VECTORIZER_PATH = "detection/dns_char_vectorizer.joblib"
@@ -8,8 +9,8 @@ MODEL_PATH = "detection/dns_ngram_model.joblib"
 
 
 def load_dns_model():
-    vectorizer = joblib.load(VECTORIZER_PATH)
-    model = joblib.load(MODEL_PATH)
+    vectorizer = joblib.load(get_model_path(VECTORIZER_PATH))
+    model = joblib.load(get_model_path(MODEL_PATH))
 
     return vectorizer, model
 
