@@ -460,6 +460,37 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             "ok",
         )
 
+    def test_cors_allows_only_configured_frontend_origin_without_credentials(self):
+        allowed_origin = "https://netra-x-three.vercel.app"
+        allowed = self.client.options(
+            "/api/analyze",
+            headers={
+                "Origin": allowed_origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(
+            allowed.headers.get("access-control-allow-origin"),
+            allowed_origin,
+        )
+        self.assertNotIn("access-control-allow-credentials", allowed.headers)
+
+        untrusted_origin = "https://untrusted-preview.vercel.app"
+        denied = self.client.options(
+            "/api/analyze",
+            headers={
+                "Origin": untrusted_origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        self.assertNotEqual(
+            denied.headers.get("access-control-allow-origin"),
+            untrusted_origin,
+        )
+
     def test_flow_detectors_reachable(self):
         response = self._post_csv(self.flow_csv)
         payload = response.json()
