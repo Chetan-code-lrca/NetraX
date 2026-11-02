@@ -152,7 +152,9 @@ async def analyze(file: UploadFile = File(...)):
                 if error.details:
                     content["details"] = error.details
 
-                if error.code == "cicflow_timeout":
+                if error.code == "too_many_flows":
+                    status_code = 413
+                elif error.code == "cicflow_timeout":
                     status_code = 504
                 elif error.code in (
                     "cicflow_not_found",
