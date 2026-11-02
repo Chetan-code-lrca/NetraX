@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from detection.input_limits import InputLimitError, read_bounded_flow_csv
+
 from detection.c2.c2_detector import FEATURES as C2_FEATURES
 from detection.c2.c2_detector import c2_score
 from detection.dns_detector import detect_dns, load_dns_model
@@ -221,7 +223,10 @@ def load_observations(
     timeout_seconds=CICFLOWMETER_TIMEOUT_SECONDS,
 ):
     if suffix == ".csv":
-        return pd.read_csv(input_path), "csv"
+        try:
+            return read_bounded_flow_csv(input_path), "csv"
+        except InputLimitError as error:
+            raise FlowExtractionError("too_many_flows", str(error)) from error
 
     flow_csv = workspace / "flows.csv"
     resolved_cicflowmeter_path = resolve_cicflowmeter_path(
@@ -274,7 +279,10 @@ def load_observations(
             "CICFlowMeter completed but did not produce a flow CSV."
         )
 
-    return pd.read_csv(flow_csv), suffix.lstrip(".")
+    try:
+        return read_bounded_flow_csv(flow_csv), suffix.lstrip(".")
+    except InputLimitError as error:
+        raise FlowExtractionError("too_many_flows", str(error)) from error
 
 
 def detect_input_contract(df, flow_models):

@@ -144,7 +144,7 @@ Supported uploads:
 - `.pcapng`
 - `.csv`
 
-CSV files must already contain the flow features expected by the detectors. Uploaded files are limited to 100 MB by the API.
+CSV files must already contain the flow features expected by the detectors. Uploaded files are limited to 100 MB and 100,000 extracted flow rows by the API.
 
 ## Tests
 
