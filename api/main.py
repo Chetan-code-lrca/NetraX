@@ -46,16 +46,14 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://netra-x-three.vercel.app",
         *EXTRA_ALLOWED_ORIGINS,
     ],
-    allow_origin_regex=(
-        r"https?://"
-        r"(localhost|127\.0\.0\.1)(:\d+)?"
-        r"|https://[\w-]+\.vercel\.app"
-    ),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # Preview/staging origins must be explicitly added through
+    # NETRAX_ALLOWED_ORIGINS; do not trust every *.vercel.app deployment.
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 
