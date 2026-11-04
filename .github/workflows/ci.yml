@@ -82,3 +82,23 @@ jobs:
           cat /tmp/netrax-health.json
           curl --fail --silent http://127.0.0.1:8080/api/readiness
           curl --fail --silent http://127.0.0.1:8080/docs | grep -q "swagger-ui"
+
+          # Exercise the real browser-proxy -> API -> detector path with the
+          # bundled synthetic sample. This proves wiring, not detector quality.
+          curl --fail --silent \
+            --form "file=@frontend/public/examples/c2-behavioral-sample.csv" \
+            http://127.0.0.1:8080/api/analyze > /tmp/netrax-c2.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path("/tmp/netrax-c2.json").read_text())
+          assert result["status"] == "complete", result
+          assert result["flows_processed"] == 1, result
+          assert any(
+              alert["threat_class"] == "C2_Beaconing"
+              for alert in result["alerts"]
+          ), result
+          print("Synthetic C2 upload smoke test passed.")
+          PY
