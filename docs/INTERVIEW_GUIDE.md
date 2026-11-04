@@ -26,7 +26,9 @@ The current product workflow is offline capture analysis:
 5. Review findings in the dashboard and export a JSON report.
 
 This is not a live network sensor. The browser does not capture packets, and
-the application does not block, quarantine, or reconfigure hosts.
+the application does not block, quarantine, or reconfigure hosts. The dashboard
+must describe this as offline file analysis until a separate, tested capture
+agent and authenticated ingest service exist.
 
 ## 3. System architecture
 
@@ -94,9 +96,19 @@ The runtime only loads trusted artifacts when the relevant detector is used.
 ### Docker Compose
 
 One command builds and runs the API and the pre-built React dashboard.
-Nginx serves static files and proxies `/api/` to FastAPI, so the browser uses
-one origin in the local deployment. The API container is not published as a
-host port by default.
+Nginx serves static files and proxies `/api/` and the local API documentation
+to FastAPI, so the browser uses one origin in the local deployment. The API
+container is not published as a host port. The dashboard binds to loopback
+(`127.0.0.1`) by default. The API container is non-root, read-only, drops
+Linux capabilities, and uses a bounded temporary workspace.
+
+### Analysis concurrency
+
+The API allows at most two simultaneous analysis requests per process by
+default. It waits briefly for a slot, then responds with HTTP 429 and a retry
+hint instead of creating unbounded work. Configure
+`NETRAX_MAX_CONCURRENT_ANALYSES` to change the per-process limit. This is not
+a durable queue, and the limit is not shared across multiple API replicas.
 
 ### JSON report
 
@@ -118,6 +130,18 @@ accounts, or a complex reporting service.
   do not present it as the probability that an attack occurred.
 
 The exact semantics are implemented in the alert and separability modules.
+A detector's presence in the codebase does not mean its trained artifact is
+installed, compatible, calibrated, or validated on unseen real-world traffic.
+Readiness reports input-path availability, not model quality. The dashboard
+states which offline input types are available and clarifies that model
+readiness checks artifact presence only.
+
+The current feature inventory has an unresolved directional-schema conflict:
+`features/one_way_features.py` includes `Flow Duration` as originator-only,
+while the master feature mapping classifies it as responder-dependent. See
+[the one-way feature and model audit](ONE_WAY_FEATURE_AND_MODEL_AUDIT.md).
+Until reconciled and covered by strict one-way capture fixtures, do not claim
+that all current model inputs are validated under one-way observation.
 When explaining a detector, open its implementation and trace one real
 input row through feature preparation, prediction/scoring, and alert building.
 
