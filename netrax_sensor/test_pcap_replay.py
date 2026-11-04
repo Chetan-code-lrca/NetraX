@@ -195,6 +195,27 @@ def test_multi_interface_pcapng_is_rejected_explicitly(tmp_path):
         _replay(capture)
 
 
+def test_pcapng_simple_packet_blocks_are_rejected_not_silently_skipped(tmp_path):
+    capture = tmp_path / "simple-block.pcapng"
+    packet = _ethernet_ipv4_tcp("192.0.2.10", "198.51.100.20", 50000, 443)
+    _write_pcapng(capture, [(1000.0, packet)])
+
+    original = capture.read_bytes()
+    padded_length = (len(packet) + 3) // 4 * 4
+    block_length = 16 + padded_length
+    simple_packet_block = (
+        struct.pack("<II", 3, block_length)
+        + struct.pack("<I", len(packet))
+        + packet
+        + (b"\x00" * (padded_length - len(packet)))
+        + struct.pack("<I", block_length)
+    )
+    capture.write_bytes(original + simple_packet_block)
+
+    with pytest.raises(ReplayError, match="Simple Packet Blocks"):
+        _replay(capture)
+
+
 def test_non_ethernet_linktype_is_rejected(tmp_path):
     capture = tmp_path / "raw-ip.pcap"
     packet = _ethernet_ipv4_tcp("192.0.2.10", "198.51.100.20", 50000, 443)
