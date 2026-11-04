@@ -460,6 +460,30 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             "ok",
         )
 
+    def test_readiness_reports_model_artifacts_and_pcap_converter(self):
+        response = self.client.get("/api/readiness")
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        self.assertIn(payload["status"], {"ready", "degraded"})
+        self.assertEqual(
+            payload["model_artifacts"]["missing"],
+            [],
+        )
+        self.assertEqual(
+            set(payload["model_artifacts"]["available"]),
+            {
+                "portscan_model.joblib",
+                "ddos_model.joblib",
+                "dns_char_vectorizer.joblib",
+                "dns_ngram_model.joblib",
+                "encrypted_malware_model.joblib",
+            },
+        )
+        self.assertIn("ready", payload["pcap_conversion"])
+        self.assertEqual(payload["limits"]["max_upload_mb"], 100)
+        self.assertGreater(payload["limits"]["max_flow_rows"], 0)
+
     def test_cors_allows_only_configured_frontend_origin_without_credentials(self):
         allowed_origin = "https://netra-x-three.vercel.app"
         allowed = self.client.options(
