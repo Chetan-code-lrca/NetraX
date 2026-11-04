@@ -55,6 +55,24 @@ def stratified_group_holdout(
             f"found {unique_groups}."
         )
 
+    group_counts_by_class = (
+        pd.DataFrame({"label": y, "group": group_values})
+        .drop_duplicates()
+        .groupby("label")["group"]
+        .nunique()
+    )
+    insufficient_classes = {
+        str(label): int(count)
+        for label, count in group_counts_by_class.items()
+        if count < n_splits
+    }
+    if insufficient_classes:
+        raise ValueError(
+            "Each class must appear in at least "
+            f"{n_splits} distinct capture groups for a {n_splits}-fold "
+            f"group split; insufficient coverage: {insufficient_classes}."
+        )
+
     classes = set(y.unique())
     splitter = StratifiedGroupKFold(
         n_splits=n_splits,
