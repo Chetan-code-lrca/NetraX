@@ -39,7 +39,7 @@ services:
     cpus: 1.0
     volumes:
       - ./captures:/captures:ro
-      - ./schemas/examples/sensor-config-v1.json:/config/sensor-config-v1.json:ro
+      - ${NETRAX_SENSOR_CONFIG:-./schemas/examples/sensor-config-v1.json}:/config/sensor-config-v1.json:ro
       - netrax_sensor_spool:/var/lib/netrax/spool
     logging:
       driver: json-file
