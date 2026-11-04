@@ -332,6 +332,9 @@ function App() {
             </div>
           )}
           <div className="sample-tip" role="note">
+            **Capture direction is not verified.** A PCAP/PCAPNG may include both directions. Use only documented one-direction sensor captures for one-way research; reports remain marked unverified until a trusted sensor manifest is introduced.
+          </div>
+          <div className="sample-tip" role="note">
             First time using NetraX? Download the <a href="/examples/c2-behavioral-sample.csv" download>synthetic C2 sample CSV</a> to exercise the rule-based C2 detector without model artifacts. This is example data, not a real capture.
           </div>
           {error && <div className="error">! <span>{error}</span></div>}
@@ -407,7 +410,7 @@ function App() {
               <div><div className="eyebrow">ANALYSIS STATE</div><h2>Decision context</h2></div>
               <button className="secondary" type="button" disabled={!result} onClick={downloadReport}>Download report</button>
             </div>
-            <div className="decision"><div className="decision-icon">✓</div><div><b>{result ? decision(summary) : 'AWAITING CAPTURE'}</b><p>{result ? 'Decision reflects the evidence returned by the active detector pipeline.' : 'No results are shown until an analysis has completed.'}</p></div></div>
+            <div className="decision"><div className="decision-icon">✓</div><div><b>{result ? decision(summary) : 'AWAITING FILE'}</b><p>{result ? 'Decision reflects the evidence returned by the active detector pipeline.' : 'No results are shown until an analysis has completed.'}</p></div></div>
             <div className="state-list">
               <Row label="Analysis ID" value={result?.analysis_id || 'Not assigned'} mono />
               <Row label="Input" value={result?.filename || 'No file'} />
