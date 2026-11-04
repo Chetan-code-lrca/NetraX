@@ -191,11 +191,11 @@ function App() {
       report_version: '1.0',
       generated_at: new Date().toISOString(),
       product: 'NetraX',
-      purpose: 'Passive, evidence-aware network traffic analysis',
+      purpose: 'Offline, evidence-aware network traffic analysis',
       limitations: [
         'A finding is an indicator for investigation, not proof of compromise.',
         'Model confidence is not the same as a calibrated probability of real-world risk.',
-        'One-way observation cannot recover information that was not visible to the sensor.',
+        'Capture direction is not independently verified; an uploaded PCAP may contain bidirectional traffic.',
         'Use only traffic captures you are authorized to analyze.',
       ],
       analysis: result,
@@ -237,13 +237,17 @@ function App() {
           <img src="/netrax-mark.svg" alt="" />
           <div>
             <div className="brand-name">NETRAX</div>
-            <div className="brand-subtitle">AI-BASED DETECTION OF CYBER THREATS IN UNIDIRECTIONAL IP TRAFFIC</div>
+            <div className="brand-subtitle">OFFLINE NETWORK ANALYSIS · CAPTURE DIRECTION NOT VERIFIED</div>
           </div>
         </div>
         <div className="service-box">
           <span className={`dot ${backend}`} />
           <span>{backend === 'online'
-            ? readiness?.status === 'degraded' ? 'API ONLINE · SETUP INCOMPLETE' : 'ANALYSIS SERVICE READY'
+            ? readiness?.status === 'ready'
+              ? 'RUNTIME FILE CHECKS PASSED'
+              : readiness
+                ? 'API ONLINE · PARTIAL CAPABILITIES'
+                : 'API ONLINE · CHECKING CAPABILITIES'
             : backend === 'offline' ? 'BACKEND OFFLINE' : 'CHECKING SERVICE'}</span>
           <button onClick={health}>Refresh</button>
         </div>
@@ -253,8 +257,8 @@ function App() {
         <section className="hero">
           <div>
             <div className="eyebrow">NETRAX SECURITY CONSOLE</div>
-            <h1>Passive visibility for<br />one-way network traffic.</h1>
-            <p>Capture first. Analyze second. Decide only from the evidence that is actually observable.</p>
+            <h1>Evidence-led analysis for<br />network traffic files.</h1>
+            <p>Analyze authorized PCAP/PCAPNG and supported flow CSVs. This release does not independently verify capture direction.</p>
           </div>
           <div className="mode-card">
             <span>OBSERVATION MODE</span>
@@ -265,7 +269,7 @@ function App() {
 
         <section className="panel upload-panel">
           <div className="section-head">
-            <div><div className="eyebrow">TRAFFIC INPUT</div><h2>Captured traffic</h2></div>
+            <div><div className="eyebrow">TRAFFIC INPUT</div><h2>Traffic file</h2></div>
             <span>PCAP · PCAPNG · NETRAX FLOW CSV</span>
           </div>
           <input
@@ -408,6 +412,7 @@ function App() {
               <Row label="Analysis ID" value={result?.analysis_id || 'Not assigned'} mono />
               <Row label="Input" value={result?.filename || 'No file'} />
               <Row label="Type" value={result?.file_type || '—'} />
+              <Row label="Direction verification" value={result?.direction_validation?.status || 'Not verified'} />
               <Row label="Alerts returned" value={result?.alerts_returned ?? '—'} />
             </div>
           </div>
@@ -421,7 +426,7 @@ function App() {
           <Details alert={selected} />
         </section>
 
-        <footer><b>NETRAX</b><span>Passive observation · evidence-aware decisions</span>{result?.alerts_truncated && <span className="warn">Alert feed truncated</span>}</footer>
+        <footer><b>NETRAX</b><span>Offline analysis · evidence-aware decisions</span>{result?.alerts_truncated && <span className="warn">Alert feed truncated</span>}</footer>
       </main>
     </div>
   )
@@ -522,7 +527,8 @@ function TrafficFlowVisualization({ phase, file, alert }) {
           <h2>Conceptual passive deployment model</h2>
           <p>
             Illustrative architecture only. This is not a live network view or a connected
-            tap; the current release analyzes uploaded PCAP/PCAPNG and supported CSV files.
+            tap; the current release analyzes uploaded files and does not verify
+            that a PCAP contains only one traffic direction.
           </p>
         </div>
 
