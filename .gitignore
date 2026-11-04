@@ -45,3 +45,9 @@ tools/cicflowmeter/
 # Derived ML datasets
 data/ddos_one_way.csv
 data/portscan_one_way.csv
+
+# Local customer capture/config data (never commit these)
+.env
+captures/
+sensor-config/
+*.ndjson
