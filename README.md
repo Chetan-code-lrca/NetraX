@@ -165,6 +165,16 @@ records. For CSV files, supply the flow features expected by one of the current
 detector input contracts; arbitrary CSV files are not automatically
 interpretable as network flows.
 
+### Try the bundled sample without model artifacts
+
+The dashboard links to a small synthetic C2 behavioral CSV at
+`frontend/public/examples/c2-behavioral-sample.csv`. Upload it to exercise
+the rule-based C2 detector on a fresh clone. This sample does not require
+trained model artifacts or CICFlowMeter. It is synthetic demonstration data,
+not a real packet capture or evidence of an actual attack. PortScan, DDoS, DNS,
+and encrypted-malware model paths still require their trusted trained
+artifacts.
+
 ## Input and resource limits
 
 | Limit | Current value |
