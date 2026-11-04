@@ -81,11 +81,12 @@ def test_spool_enforces_event_and_byte_capacity_without_dropping(tmp_path):
     byte_limited = DiskSpool(
         tmp_path / "small-spool",
         max_events=10,
-        max_bytes=payload_size - 1,
+        max_bytes=payload_size + payload_size // 2,
         max_event_bytes=payload_size,
     )
+    byte_limited.append(event)
     with pytest.raises(SpoolFullError, match="byte capacity"):
-        byte_limited.append(event)
+        byte_limited.append(changed)
 
 
 def test_spool_rejects_individually_oversized_event(tmp_path):
