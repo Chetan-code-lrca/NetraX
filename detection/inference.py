@@ -24,6 +24,7 @@ from detection.model_detector import (
     load_model,
 )
 from detection.pipeline import build_alert
+from detection.model_paths import get_model_artifact_status
 from features.cicflow_adapter import adapt_cicflow_row
 
 
@@ -924,7 +925,20 @@ def run_unified_inference(df):
         # Only attempt the model-backed flow schema fallback when the upload
         # actually resembles a flow-feature table. Arbitrary CSV files should
         # fail as unsupported input, not misleadingly as a missing-model error.
-        if flow_models or not _looks_like_flow_model_schema(columns):
+        flow_artifacts = {
+            "portscan_model.joblib",
+            "ddos_model.joblib",
+        }
+        available_artifacts = set(
+            get_model_artifact_status()["available"]
+        )
+        can_check_model_schema = flow_artifacts.issubset(
+            available_artifacts
+        )
+        if flow_models or (
+            not _looks_like_flow_model_schema(columns)
+            and not can_check_model_schema
+        ):
             raise
 
         flow_models = {
