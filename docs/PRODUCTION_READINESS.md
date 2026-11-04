@@ -7,7 +7,9 @@ that the tested code paths behave as expected. It does not prove that the
 detectors are accurate on real networks, that the model artifacts are valid,
 or that the service is safe for an internet-facing deployment.
 
-This document defines the evidence required before making those claims.
+This document defines the evidence required before making those claims. The
+current feature-level discrepancy and model-validation limitations are
+recorded in [ONE_WAY_FEATURE_AND_MODEL_AUDIT.md](ONE_WAY_FEATURE_AND_MODEL_AUDIT.md).
 
 ## What is implemented today
 
