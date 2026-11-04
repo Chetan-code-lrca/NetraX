@@ -1,15 +1,22 @@
 # NetraX
 
-**Passive, evidence-aware analysis of one-way network traffic.**
+**Offline, evidence-aware analysis of network traffic files.**
 
-NetraX is a file-based network traffic analysis tool built around the SIH26145
-problem: detecting suspicious behavior when a monitoring point can observe only
-one direction of a communication flow.
+NetraX is a file-based network traffic analysis research tool built around the
+SIH26145 problem: detecting suspicious behavior when a monitoring point can
+observe only one direction of a communication flow.
+
+Important: the current upload path does not independently verify that a PCAP
+contains only one direction. CICFlowMeter groups forward and reverse packets
+when both are present. Treat arbitrary uploads as direction-unverified until
+they come from a trusted, documented one-direction capture source. See the
+[one-way feature and model audit](docs/ONE_WAY_FEATURE_AND_MODEL_AUDIT.md).
 
 The first practical workflow is intentionally simple: upload an authorized
 PCAP/PCAPNG capture or a supported flow CSV, run analysis, review evidence and
 download a JSON report. NetraX does not actively probe the network or perform
-mitigation.
+mitigation. Every result explicitly records capture-direction validation as
+unverified in the current release.
 
 ## What it can analyze
 
