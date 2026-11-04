@@ -108,16 +108,21 @@ class ReplayCheckpointStore:
                 f"Replay checkpoint is unreadable: {path.name}"
             ) from error
 
+        if not isinstance(payload, dict):
+            raise CheckpointError("Replay checkpoint payload must be a JSON object.")
         if payload.get("identity") != identity:
             raise CheckpointError("Replay checkpoint identity does not match its key.")
-        if payload.get("total_flows") != expected_total_flows:
+        total_flows = payload.get("total_flows")
+        if isinstance(total_flows, bool) or not isinstance(total_flows, int) or total_flows < 0:
+            raise CheckpointError("Replay checkpoint total_flows is invalid.")
+        if total_flows != expected_total_flows:
             raise CheckpointError(
                 "Replay flow count changed for an existing capture/config checkpoint. "
                 "Bump sensor_version or config_version before replaying changed extraction logic."
             )
 
         next_index = payload.get("next_flow_index")
-        if not isinstance(next_index, int) or not 0 <= next_index <= expected_total_flows:
+        if isinstance(next_index, bool) or not isinstance(next_index, int) or not 0 <= next_index <= expected_total_flows:
             raise CheckpointError("Replay checkpoint next_flow_index is invalid.")
         return next_index
 
@@ -128,8 +133,15 @@ class ReplayCheckpointStore:
         next_flow_index: int,
         total_flows: int,
     ) -> None:
-        if not 0 <= next_flow_index <= total_flows:
-            raise ValueError("next_flow_index must be within the capture flow count.")
+        if (
+            isinstance(next_flow_index, bool)
+            or not isinstance(next_flow_index, int)
+            or isinstance(total_flows, bool)
+            or not isinstance(total_flows, int)
+            or total_flows < 0
+            or not 0 <= next_flow_index <= total_flows
+        ):
+            raise ValueError("next_flow_index must be an integer within the capture flow count.")
 
         destination = self._path(identity)
         if not destination.exists():
