@@ -496,7 +496,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         payload = response.json()
-        self.assertIn(payload["status"], {"ready", "degraded"})
+        self.assertIn(payload["status"], {"ready", "partial"})
         self.assertEqual(
             payload["model_artifacts"]["missing"],
             [],
@@ -512,10 +512,41 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             },
         )
         self.assertNotIn("directory", payload["model_artifacts"])
+        self.assertEqual(
+            payload["model_artifacts"]["verification"],
+            "presence_only",
+        )
+        self.assertTrue(
+            payload["capabilities"]["c2_behavioral_csv"]["ready"]
+        )
+        self.assertTrue(
+            payload["capabilities"]["flow_features_csv"]["ready"]
+        )
         self.assertIn("ready", payload["pcap_conversion"])
         self.assertNotIn("executable", payload["pcap_conversion"])
         self.assertEqual(payload["limits"]["max_upload_mb"], 100)
         self.assertGreater(payload["limits"]["max_flow_rows"], 0)
+
+    def test_empty_csv_is_rejected_as_client_error(self):
+        path = Path(self.fixtures_dir.name) / "empty.csv"
+        path.write_text("", encoding="utf-8")
+
+        response = self._post_csv(path)
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error_code"], "invalid_csv")
+
+    def test_unsupported_csv_schema_is_rejected_as_client_error(self):
+        path = Path(self.fixtures_dir.name) / "unsupported.csv"
+        pd.DataFrame({"notes": ["not a network flow"]}).to_csv(
+            path,
+            index=False,
+        )
+
+        response = self._post_csv(path)
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error_code"], "unsupported_schema")
 
     def test_cors_allows_only_configured_frontend_origin_without_credentials(self):
         allowed_origin = "https://netra-x-three.vercel.app"
