@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schema_name", "schema_version", "event_id", "event_time",
+    "organization_id", "site_id", "sensor_id",
     "sensor_version", "config_version", "capture_id",
     "direction_validation", "capture_health", "feature_schema_id", "flow"
   ],
