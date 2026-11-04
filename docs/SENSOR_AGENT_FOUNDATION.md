@@ -28,7 +28,8 @@ Create a local capture directory and copy only authorized captures into it:
 ```bash
 mkdir -p captures
 docker compose --profile offline-replay run --rm sensor-replay \
-  --input /captures/lab.pcap
+  --input /captures/lab.pcap \
+  --config /config/sensor-config-v1.json
 ```
 
 The example config is mounted at
