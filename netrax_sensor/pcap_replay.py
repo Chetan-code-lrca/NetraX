@@ -310,12 +310,13 @@ def _validate_single_interface_pcapng(path: Path) -> None:
                         "PCAPNG packet references an interface other than interface 0.",
                     )
             elif block_type == PCAPNG_SIMPLE_PACKET_BLOCK:
-                # Simple Packet Blocks implicitly belong to interface 0.
-                if interface_count != 1:
-                    raise ReplayError(
-                        "invalid_pcapng",
-                        "PCAPNG packet blocks must follow the single interface description block.",
-                    )
+                # Simple Packet Blocks have no timestamp. The current replay
+                # contract requires an observed event timestamp and must not
+                # silently skip packet records.
+                raise ReplayError(
+                    "unsupported_pcapng_packet_block",
+                    "PCAPNG Simple Packet Blocks are unsupported because they do not carry per-packet timestamps.",
+                )
 
         if interface_count != 1:
             raise ReplayError(
