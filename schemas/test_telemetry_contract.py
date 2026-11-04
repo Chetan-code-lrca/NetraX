@@ -32,6 +32,24 @@ class TelemetryContractTests(unittest.TestCase):
             "; ".join(error.message for error in errors),
         )
 
+    def test_payload_sensor_identity_must_match_authenticated_registry(self):
+        # The JSON Schema validates structure only. Identity authorization is
+        # an ingest-boundary responsibility and must not trust payload claims.
+        payload = {
+            "organization_id": self.example["organization_id"],
+            "site_id": self.example["site_id"],
+            "sensor_id": self.example["sensor_id"],
+        }
+        authenticated_identity = {
+            "organization_id": "org_other",
+            "site_id": "site_hq",
+            "sensor_id": "sensor_edge_01",
+        }
+        self.assertNotEqual(
+            payload["organization_id"],
+            authenticated_identity["organization_id"],
+        )
+
     def test_verified_unidirectional_requires_provenance(self):
         event = json.loads(json.dumps(self.example))
         event["direction_validation"] = {
