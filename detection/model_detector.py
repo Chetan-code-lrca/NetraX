@@ -3,6 +3,30 @@ import pandas as pd
 
 from detection.pipeline import build_alert
 from detection.model_paths import get_model_path
+from features.one_way_features import (
+    ONE_WAY_FEATURE_SCHEMA_ID,
+    validate_one_way_feature_names,
+)
+
+
+class ModelFeatureContractError(ValueError):
+    """Raised when a trained model expects features outside the one-way contract."""
+
+
+def validate_model_feature_contract(model):
+    feature_names = getattr(model, "feature_names_in_", None)
+    if feature_names is None:
+        raise ModelFeatureContractError(
+            "Model artifact has no named feature schema. Retrain it using a "
+            "pandas DataFrame and the NetraX one-way feature contract."
+        )
+
+    try:
+        return validate_one_way_feature_names(feature_names)
+    except ValueError as error:
+        raise ModelFeatureContractError(
+            f"Model artifact is incompatible with {ONE_WAY_FEATURE_SCHEMA_ID}: {error}"
+        ) from error
 
 
 MODELS = {
@@ -16,7 +40,9 @@ def load_model(threat_class):
     if threat_class not in MODELS:
         raise ValueError(f"No model available for {threat_class}")
 
-    return joblib.load(get_model_path(MODELS[threat_class]))
+    model = joblib.load(get_model_path(MODELS[threat_class]))
+    validate_model_feature_contract(model)
+    return model
 
 
 def _build_model_alert(
@@ -40,8 +66,8 @@ def _build_model_alert(
             if features.get(" Total Fwd Packets", 0) > 0:
                 evidence.append("Source-side packet behavior")
 
-            if features.get(" Flow Duration", 0) >= 0:
-                evidence.append("Flow timing")
+            if features.get(" Fwd IAT Mean", 0) > 0:
+                evidence.append("Forward inter-arrival timing")
 
         elif threat_class == "DDoS":
             if features.get(" Total Fwd Packets", 0) > 0:
@@ -85,7 +111,7 @@ def detect_model(
     if model is None:
         model = load_model(threat_class)
 
-    feature_names = list(model.feature_names_in_)
+    feature_names = validate_model_feature_contract(model)
 
     X = pd.DataFrame(
         [[features[name] for name in feature_names]],
@@ -127,10 +153,10 @@ def detect_model_batch(
             "feature_rows and flow_ids must have the same length"
         )
 
+    feature_names = validate_model_feature_contract(model)
+
     if not feature_rows:
         return []
-
-    feature_names = list(model.feature_names_in_)
 
     X = pd.DataFrame(
         [

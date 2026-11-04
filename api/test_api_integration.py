@@ -734,6 +734,24 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             threat_classes,
         )
 
+    def test_incompatible_model_feature_contract_maps_to_503(self):
+        error = self.api_main.FlowExtractionError(
+            "model_contract_invalid",
+            "Installed model uses unsupported one-way features. Retrain the model.",
+        )
+        with mock.patch.object(
+            self.api_main,
+            "_analyze_file",
+            side_effect=error,
+        ):
+            response = self._post_csv(self.flow_csv)
+
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertEqual(
+            response.json()["error_code"],
+            "model_contract_invalid",
+        )
+
     def test_pcap_timeout_maps_to_504(self):
         with mock.patch(
             "detection.inference.subprocess.run",

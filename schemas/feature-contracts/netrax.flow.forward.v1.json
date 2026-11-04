@@ -1,0 +1,81 @@
+{
+  "schema_id": "netrax.flow.forward.v1",
+  "version": 1,
+  "observation_model": "strictly_unidirectional",
+  "description": "Approved flow features computed solely from packets in the monitored direction. Legacy bidirectional CICFlowMeter flow-wide features are not accepted.",
+  "threat_families": [
+    "PortScan",
+    "DDoS",
+    "Data_Exfiltration"
+  ],
+  "allowed_features": [
+    " Destination Port",
+    " Total Fwd Packets",
+    "Total Length of Fwd Packets",
+    " Fwd Packet Length Max",
+    " Fwd Packet Length Min",
+    " Fwd Packet Length Mean",
+    "Fwd Packet Length Std",
+    " Fwd IAT Total",
+    " Fwd IAT Mean",
+    " Fwd IAT Std",
+    " Fwd IAT Max",
+    " Fwd IAT Min",
+    "Fwd PSH Flags",
+    " Fwd URG Flags",
+    " Fwd Header Length",
+    "Fwd Packets/s",
+    " Avg Fwd Segment Size",
+    "Fwd Header Length.1",
+    " Fwd Avg Bytes/Bulk",
+    " Fwd Avg Packets/Bulk",
+    " Fwd Avg Bulk Rate",
+    "Subflow Fwd Packets",
+    "Subflow Fwd Bytes",
+    "Init_Win_bytes_forward",
+    " act_data_pkt_fwd",
+    " min_seg_size_forward"
+  ],
+  "excluded_legacy_features": [
+    {
+      "name": " Flow Duration",
+      "reason": "Classic CICFlowMeter Flow Duration spans the complete bidirectional flow and is classified responder-dependent in the master mapping."
+    },
+    {
+      "name": " FIN Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    },
+    {
+      "name": " SYN Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    },
+    {
+      "name": " RST Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    },
+    {
+      "name": " PSH Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    },
+    {
+      "name": " ACK Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    },
+    {
+      "name": " URG Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    },
+    {
+      "name": " CWE Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    },
+    {
+      "name": " ECE Flag Count",
+      "reason": "Aggregate TCP flag count can include reverse/responder packets."
+    }
+  ],
+  "limitations": [
+    "This contract does not by itself prove that a capture is direction-verified. Trusted sensor/topology provenance is required.",
+    "Changing a trained model's feature set requires retraining and fresh evaluation; old artifacts are rejected at inference if their feature names are outside this contract."
+  ]
+}

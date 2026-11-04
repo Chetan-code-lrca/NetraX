@@ -24,6 +24,13 @@ The current inference pipeline includes:
 
 The detectors do not all use the same technique. Some use trained model
 artifacts; C2 and exfiltration paths also include feature/rule-based analysis.
+The PortScan/DDoS flow-model inputs are governed by the versioned
+`netrax.flow.forward.v1` contract. See
+[the strict one-way feature contract](docs/ONE_WAY_FEATURE_CONTRACT.md) for
+approved fields, excluded legacy features and retraining requirements. Old
+PortScan/DDoS models that expect bidirectional fields are rejected at runtime;
+they must be retrained rather than silently adapted. PortScan/DDoS training also requires capture-group-disjoint
+evaluation metadata; it will not fall back to random row-level splits.
 An alert is an investigation lead, not proof that a host is compromised.
 
 ## Run it with Docker Compose

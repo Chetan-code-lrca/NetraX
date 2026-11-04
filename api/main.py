@@ -200,6 +200,7 @@ async def analyze(file: UploadFile = File(...)):
                 elif error.code in (
                     "cicflow_not_found",
                     "model_unavailable",
+                    "model_contract_invalid",
                 ):
                     status_code = 503
                 else:

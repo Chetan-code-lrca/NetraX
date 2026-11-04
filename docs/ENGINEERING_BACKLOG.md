@@ -10,7 +10,9 @@ This backlog is ordered by dependency. Do not begin downstream work before its a
 - [ ] Audit all directional features against actual packet-level semantics.
 - [ ] Create strict unidirectional and bidirectional PCAP fixtures with expected extracted features.
 - [ ] Build model cards and SHA-256 manifests for every trained model.
-- [ ] Re-run evaluation with capture/host/time-disjoint splits and an external dataset.
+- [x] Enforce the 26-feature one-way contract for PortScan/DDoS and reject responder-dependent legacy model artifacts.
+- [x] Require capture-group-disjoint PortScan/DDoS holdout splits; fail closed when group provenance is missing or class coverage is impossible.
+- [ ] Re-run evaluation on real datasets with capture/host/time-disjoint splits and an external dataset.
 - [ ] Add calibrated-threshold and false-positive-per-host-hour reporting where data permits.
 - [ ] Ensure every report exposes direction validation, schema version, detector/model version, and visibility limitations.
 
