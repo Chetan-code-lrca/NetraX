@@ -51,7 +51,7 @@ def load_sensor_config(path: str | Path) -> ValidatedSensorConfig:
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     errors = sorted(
         validator.iter_errors(values),
-        key=lambda item: (list(item.absolute_path), item.message),
+        key=lambda item: (tuple(str(part) for part in item.absolute_path), item.message),
     )
     if errors:
         first = errors[0]
