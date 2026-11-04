@@ -6,6 +6,7 @@ services:
     environment:
       NETRAX_MODEL_DIR: /models
       NETRAX_CICFLOWMETER_PATH: /usr/local/bin/cicflowmeter
+      NETRAX_MAX_CONCURRENT_ANALYSES: ${NETRAX_MAX_CONCURRENT_ANALYSES:-2}
     volumes:
       - ./model-artifacts:/models:ro
     restart: unless-stopped
