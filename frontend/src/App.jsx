@@ -67,6 +67,9 @@ function App() {
     })
     return value
   }, [alerts])
+  const capabilityList = Object.values(readiness?.capabilities ?? {})
+  const availableCapabilities = capabilityList.filter(item => item.ready).map(item => item.label)
+  const unavailableCapabilities = capabilityList.filter(item => !item.ready).map(item => item.label)
 
   function choose(fileValue) {
     setError('')
@@ -303,7 +306,7 @@ function App() {
             <span style={{fontSize: '9px', color: '#60788c'}}>
               {backend === 'online' ? 'Analysis service connected' : backend === 'offline' ? 'Service unavailable' : 'Checking service'}
             </span>
-            <span className="ready-state"><i className={file ? 'on' : ''} />{file ? 'Capture ready' : 'No capture selected'}</span>
+            <span className="ready-state"><i className={file ? 'on' : ''} />{file ? 'File selected' : 'No file selected'}</span>
             <div className="actions">
               <button className="secondary" onClick={reset}>Reset</button>
               <button className="primary" disabled={!file || backend !== 'online' || phase === 'analyzing'} onClick={analyze}>{phase === 'analyzing' ? 'Running analysis…' : 'Analyze traffic'}</button>
@@ -311,15 +314,17 @@ function App() {
           </div>
           {readiness && (
             <div className={`readiness-note ${readiness.status === 'ready' ? 'ready' : 'warning'}`} role="status">
-              {readiness.status === 'ready'
-                ? 'Runtime checks passed: all model artifacts and the PCAP converter are available.'
-                : 'The API is online, but some runtime components are missing.'}
-              {!readiness.model_artifacts?.ready && (
-                <span> Missing model files: {readiness.model_artifacts?.missing?.join(', ') || 'not reported'}. See model-artifacts/README.md.</span>
-              )}
-              {!readiness.pcap_conversion?.ready && (
-                <span> PCAP conversion is unavailable until CICFlowMeter is installed. Rule-based C2 CSV input can still be analyzed; model-based CSV contracts need the listed artifacts.</span>
-              )}
+              <strong>
+                {readiness.status === 'ready'
+                  ? 'All supported offline input paths have their required runtime files.'
+                  : 'The API is online, but only some analysis paths are currently available.'}
+              </strong>
+              <span>Available: {availableCapabilities.join(' · ') || 'None reported'}.</span>
+              <span>Unavailable: {unavailableCapabilities.join(' · ') || 'None'}.</span>
+              <small>
+                Model readiness checks file presence only. The model is loaded and compatibility-tested when its detector runs.
+                See model-artifacts/README.md for trusted artifact setup.
+              </small>
             </div>
           )}
           <div className="sample-tip" role="note">
@@ -331,30 +336,30 @@ function App() {
         <section className="panel live-monitor-panel">
           <div className="section-head">
             <div>
-              <div className="eyebrow">LIVE MONITORING</div>
-              <h2>Continuous passive observation</h2>
+              <div className="eyebrow">LIVE CAPTURE STATUS</div>
+              <h2>Live capture is not available</h2>
             </div>
-            <span className="live-badge"><i /> DEPLOYMENT MODE</span>
+            <span className="live-badge">OFFLINE ANALYSIS MODE</span>
           </div>
           <div className="live-monitor-grid">
             <div className="live-state">
               <span className="status-ring" />
               <div>
-                <strong>Live capture agent required</strong>
+                <strong>No capture agent is configured</strong>
                 <p>
-                  24/7 monitoring needs a passive capture agent on the network
-                  (SPAN/TAP or data diode). The browser dashboard is the viewer;
-                  it does not sniff the network by itself.
+                  This build processes uploaded files only. It does not sniff a
+                  network interface, receive a sensor stream, or provide continuous
+                  monitoring. A separately secured passive sensor is required for that.
                 </p>
               </div>
             </div>
             <div className="live-specs">
-              <span>INGEST</span>
-              <strong>PCAP / flow stream</strong>
-              <span>PROCESSING</span>
-              <strong>Rolling flow windows</strong>
-              <span>ALERTS</span>
-              <strong>Real-time detector events</strong>
+              <span>AVAILABLE</span>
+              <strong>PCAP / PCAPNG / CSV upload</strong>
+              <span>NOT AVAILABLE</span>
+              <strong>Live capture and rolling windows</strong>
+              <span>NOT AVAILABLE</span>
+              <strong>Continuous alert stream</strong>
             </div>
           </div>
         </section>
@@ -500,12 +505,12 @@ function TrafficFlowVisualization({ phase, file, alert }) {
   const destination = alert?.destination || 'Observed destination'
 
   const status = complete
-    ? 'THREAT DECISION GENERATED'
+    ? 'ANALYSIS COMPLETED'
     : analyzing
-      ? 'ANALYZING OBSERVED COPY'
+      ? 'ANALYZING UPLOADED FILE'
       : ready
-        ? 'CAPTURE READY'
-        : 'WAITING FOR TRAFFIC'
+        ? 'FILE SELECTED'
+        : 'WAITING FOR FILE'
 
   const statusClass = complete ? 'complete' : analyzing ? 'analyzing' : ready ? 'ready' : ''
 
@@ -514,17 +519,17 @@ function TrafficFlowVisualization({ phase, file, alert }) {
       <div className="traffic-flow-head">
         <div>
           <div className="eyebrow">TRAFFIC FLOW VISUALIZATION</div>
-          <h2>How NetraX observes one-way traffic</h2>
+          <h2>Conceptual passive deployment model</h2>
           <p>
-            The original path remains untouched. A passive copy is observed at the
-            network tap and sent to NetraX for analysis.
+            Illustrative architecture only. This is not a live network view or a connected
+            tap; the current release analyzes uploaded PCAP/PCAPNG and supported CSV files.
           </p>
         </div>
 
         <div className="flow-state">
           <span className={`status-led ${statusClass}`} />
           <div>
-            <b>{file ? 'CAPTURE REPLAY' : 'PASSIVE OBSERVATION'}</b>
+            <b>{file ? 'FILE ANALYSIS' : 'OFFLINE MODE'}</b>
             <small>{status}</small>
           </div>
         </div>
@@ -545,8 +550,8 @@ function TrafficFlowVisualization({ phase, file, alert }) {
 
         <div className="network-stage">
           <div className="traffic-caption">
-            <b>ONE-WAY NETWORK TRAFFIC</b>
-            <span>Packets continue from source to destination</span>
+            <b>ILLUSTRATIVE ONE-WAY PATH</b>
+            <span>Conceptual source-to-destination path</span>
           </div>
 
           <div className="main-path">
