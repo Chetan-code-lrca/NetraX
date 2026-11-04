@@ -343,7 +343,7 @@ def _decode_ethernet_packet(raw: bytes):
         network = ethernet.data
 
         if isinstance(network, dpkt.ip.IP):
-            if network.off & (dpkt.ip.IP_MF | dpkt.ip.IP_OFFMASK):
+            if network.mf or network.offset:
                 return "fragment", None
             source = str(ipaddress.ip_address(network.src))
             destination = str(ipaddress.ip_address(network.dst))
