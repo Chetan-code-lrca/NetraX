@@ -72,4 +72,32 @@ This contract does not prove that an arbitrary PCAP contains only one direction.
 
 It also does not prove model accuracy. The repository does not currently contain the PortScan/DDoS training CSVs or production `.joblib` artifacts, so the corrected training scripts cannot be run against the real datasets in this change. CI uses synthetic models only to verify software behavior.
 
-The train scripts still use a random stratified split. Capture-, host-, or time-separated validation and an external held-out evaluation remain required before any production detector-performance claim.
+## Capture-group-disjoint evaluation
+
+PortScan and DDoS training now require an explicit `--group-column` that
+identifies the original PCAP/capture or another defensible independent source
+group. They use a five-fold `StratifiedGroupKFold` holdout and require at least
+five distinct groups, every label in both partitions, and zero group overlap.
+Missing or unsuitable group metadata stops training; there is no random
+row-level fallback.
+
+Example (replace `capture_id` with the actual provenance column in your
+derived dataset):
+
+```bash
+python detection/train_portscan.py --group-column capture_id
+python detection/train_ddos.py --group-column capture_id
+```
+
+A capture identifier is not interchangeable with a flow ID. The grouping unit
+must match the generalization claim: group by original capture to prevent
+within-capture leakage; use host/time/site-based groups for stronger claims
+where the dataset supports them. The current repository does not include the
+training CSVs, so the actual group column and number of independent captures
+must be confirmed before these commands can be run.
+
+This is an internal group-disjoint holdout, not a genuinely external dataset
+evaluation. DNS/encrypted model training scripts have not yet been migrated
+to this evaluation policy. An external holdout, per-class precision/recall/F1,
+PR-AUC, threshold selection and operational false-alert rates remain required
+before any production detector-performance claim.
