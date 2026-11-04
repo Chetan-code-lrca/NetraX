@@ -59,6 +59,8 @@ button { cursor: pointer; }
 .readiness-note.warning { color:var(--amber); border-color:rgba(222,183,109,.35); background:rgba(222,183,109,.06); }
 .readiness-note.ready { color:var(--green); border-color:rgba(89,210,148,.3); background:rgba(89,210,148,.05); }
 .readiness-note span { color:var(--muted); }
+.sample-tip { margin-top:12px; color:var(--muted); font-size:11px; line-height:1.6; }
+.sample-tip a { color:var(--blue); text-decoration:underline; text-underline-offset:2px; }
 
 .ready-state { color:#71869a; font-size:11px; display:flex; align-items:center; gap:7px; }
 .ready-state i { width:7px; height:7px; border-radius:50%; background:#556576; }
