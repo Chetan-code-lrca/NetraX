@@ -41,6 +41,33 @@ def get_one_way_features(columns):
     return [column for column in ONE_WAY_FEATURES if column in available]
 
 
+def select_one_way_training_features(frame, label_column):
+    """Select the exact v1 feature set and label from a training DataFrame."""
+    if label_column not in frame.columns:
+        raise ValueError(
+            f"Training dataset is missing label column {label_column!r}."
+        )
+
+    missing = [
+        name for name in ONE_WAY_FEATURES
+        if name not in frame.columns
+    ]
+    if missing:
+        raise ValueError(
+            f"Dataset does not satisfy {ONE_WAY_FEATURE_SCHEMA_ID}; "
+            f"missing features: {missing}"
+        )
+
+    feature_names = validate_one_way_feature_names(ONE_WAY_FEATURES)
+    features = frame.loc[:, feature_names].copy()
+    if features.isna().any().any():
+        raise ValueError(
+            "Training features contain missing values. Resolve them explicitly "
+            "before training; do not silently substitute zeros."
+        )
+    return features, frame[label_column].copy()
+
+
 def unsupported_one_way_features(feature_names):
     """Return model features that are not approved by the v1 contract."""
     approved = set(ONE_WAY_FEATURES)
