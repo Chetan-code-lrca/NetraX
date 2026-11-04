@@ -116,6 +116,7 @@ class ReplayResult:
     sensor_id: str = ""
     sensor_version: str = "0.1.0"
     config_version: str = "offline-replay-v1"
+    config_sha256: str | None = None
 
     @property
     def flow_count(self) -> int:
@@ -149,7 +150,7 @@ class ReplayResult:
             event_id = "replay-" + hashlib.sha256(
                 identity.encode("utf-8")
             ).hexdigest()[:40]
-            yield {
+            event = {
                 "schema_name": "netrax.flow",
                 "schema_version": 1,
                 "event_id": event_id,
@@ -201,6 +202,9 @@ class ReplayResult:
                     ),
                 },
             }
+            if self.config_sha256:
+                event["config_sha256"] = self.config_sha256
+            yield event
 
 
 def _utc_iso(timestamp: float) -> str:
@@ -399,6 +403,7 @@ def replay_capture(
     capture_id: str | None = None,
     sensor_version: str = "0.1.0",
     config_version: str = "offline-replay-v1",
+    config_sha256: str | None = None,
     limits: ReplayLimits | None = None,
 ) -> ReplayResult:
     """Read a bounded offline capture and emit directional flow telemetry."""
@@ -427,6 +432,15 @@ def replay_capture(
         )
 
     capture_hash = _sha256_file(path)
+    if config_sha256 is not None and (
+        len(config_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in config_sha256)
+    ):
+        raise ReplayError(
+            "invalid_config_digest",
+            "config_sha256 must be a lowercase 64-character SHA-256 digest.",
+        )
+
     effective_capture_id = capture_id or f"pcap-{capture_hash[:16]}"
 
     try:
@@ -547,6 +561,7 @@ def replay_capture(
             sensor_id=sensor_id,
             sensor_version=sensor_version,
             config_version=config_version,
+            config_sha256=config_sha256,
         )
     finally:
         handle.close()
@@ -632,6 +647,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--capture-id")
     parser.add_argument("--sensor-version", default="0.1.0")
     parser.add_argument("--config-version", default="offline-replay-v1")
+    parser.add_argument("--config-sha256")
     parser.add_argument("--max-file-mb", type=int, default=100)
     parser.add_argument("--max-packets", type=int, default=DEFAULT_MAX_PACKETS)
     parser.add_argument("--max-flows", type=int, default=DEFAULT_MAX_FLOWS)
@@ -667,6 +683,7 @@ def main(argv: list[str] | None = None) -> int:
             capture_id=args.capture_id,
             sensor_version=args.sensor_version,
             config_version=args.config_version,
+            config_sha256=args.config_sha256,
             limits=limits,
         )
         count = write_events_jsonl(
