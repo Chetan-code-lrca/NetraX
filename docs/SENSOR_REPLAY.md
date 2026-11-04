@@ -11,12 +11,13 @@ Replay an authorized packet capture through a bounded packet-to-flow path and em
 ## Supported input
 
 - Classic libpcap PCAP files.
-- PCAPNG files with exactly one section, one interface description block and Ethernet (DLT_EN10MB) link type.
+- PCAPNG files with exactly one section, one interface description block, Ethernet (DLT_EN10MB) link type, and timestamped Enhanced/Packet Block records.
 - Ethernet II, including VLAN decapsulation supported by dpkt.
 - IPv4 and IPv6 packets carrying directly decoded TCP or UDP.
 
 Explicit limitations:
-- Multi-interface and multi-section PCAPNG files are rejected. The current dpkt reader API does not preserve each packet's interface ID in its yielded packet tuple; accepting these files without additional validation could misinterpret link types.
+- Multi-interface and multi-section PCAPNG files are rejected.
+- PCAPNG Simple Packet Blocks are rejected because they do not carry per-packet timestamps; the replay pipeline will not silently skip those records. The current dpkt reader API does not preserve each packet's interface ID in its yielded packet tuple; accepting these files without additional validation could misinterpret link types.
 - Non-Ethernet link types are rejected.
 - IP fragments are counted and skipped rather than partially interpreted.
 - ARP, ICMP, unsupported IP protocols and IPv6 packets whose transport is not directly decoded as TCP/UDP are counted as unsupported and do not produce flows.
