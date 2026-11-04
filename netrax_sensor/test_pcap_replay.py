@@ -8,6 +8,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from netrax_sensor.pcap_replay import (
     ReplayError,
     ReplayLimits,
+    main,
     replay_capture,
     write_events_jsonl,
 )
@@ -142,6 +143,43 @@ def test_single_interface_pcapng_is_supported(tmp_path):
     result = _replay(capture)
     assert result.file_format == "pcapng"
     assert result.flow_count == 1
+
+
+def test_multi_section_pcapng_is_rejected_explicitly(tmp_path):
+    first = tmp_path / "first.pcapng"
+    second = tmp_path / "second.pcapng"
+    combined = tmp_path / "multi-section.pcapng"
+    packet = _ethernet_ipv4_tcp("192.0.2.10", "198.51.100.20", 50000, 443)
+    _write_pcapng(first, [(1000.0, packet)])
+    _write_pcapng(second, [(1001.0, packet)])
+    combined.write_bytes(first.read_bytes() + second.read_bytes())
+
+    with pytest.raises(ReplayError, match="Multi-section"):
+        _replay(combined)
+
+
+def test_cli_refuses_to_overwrite_the_input_capture(tmp_path, capsys):
+    capture = tmp_path / "source.pcap"
+    packet = _ethernet_ipv4_tcp("192.0.2.10", "198.51.100.20", 50000, 443)
+    _write_pcap(capture, [(1000.0, packet)])
+    original = capture.read_bytes()
+
+    exit_code = main([
+        "--input", str(capture),
+        "--output", str(capture),
+        "--organization-id", "org_test",
+        "--site-id", "site_lab",
+        "--sensor-id", "sensor_replay",
+    ])
+
+    assert exit_code == 2
+    assert capture.read_bytes() == original
+    assert "input_output_collision" in capsys.readouterr().err
+
+
+def test_packet_size_limit_cannot_exceed_telemetry_schema_ceiling():
+    with pytest.raises(ValueError, match="cannot exceed"):
+        ReplayLimits(max_packet_bytes=262145)
 
 
 def test_multi_interface_pcapng_is_rejected_explicitly(tmp_path):
