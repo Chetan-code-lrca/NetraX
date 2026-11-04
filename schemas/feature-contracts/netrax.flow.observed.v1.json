@@ -1,0 +1,22 @@
+{
+  "schema_id": "netrax.flow.observed.v1",
+  "version": 1,
+  "observation_model": "directional_packet_observations",
+  "description": "Minimal flow telemetry derived only from packets observed in one directional 5-tuple. A capture may contain multiple directions; this contract does not attest to one-way capture provenance.",
+  "fields": {
+    "src": "Source IP address from each observed packet.",
+    "dst": "Destination IP address from each observed packet.",
+    "protocol": "TCP or UDP as decoded from each observed packet.",
+    "src_port": "Source transport port from each observed packet.",
+    "dst_port": "Destination transport port from each observed packet.",
+    "observed_packets": "Number of observed packets in this directional 5-tuple and inactivity window.",
+    "observed_bytes": "Sum of captured Ethernet frame lengths, including the Ethernet header.",
+    "observed_duration_ms": "Maximum observed packet timestamp minus minimum observed packet timestamp for this directional 5-tuple and inactivity window."
+  },
+  "limitations": [
+    "Reverse-direction packets are grouped separately and are never added to the same directional flow accumulator.",
+    "A PCAP or PCAPNG file is not a trusted sensor. direction_validation.status must remain unverified.",
+    "Fragmented IP packets, non-TCP/UDP traffic, unsupported link types, and unsupported capture layouts are not used for flow generation.",
+    "This basic telemetry schema is not the trained PortScan/DDoS feature schema and cannot be fed directly to those models without a separately validated feature-conversion stage."
+  ]
+}
