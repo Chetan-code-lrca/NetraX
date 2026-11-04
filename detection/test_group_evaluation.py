@@ -61,5 +61,5 @@ def test_group_holdout_rejects_class_distribution_that_cannot_be_separated():
     X, _, groups = _balanced_capture_dataset()
     y = pd.Series(["BENIGN"] * (len(X) - 1) + ["DDoS"])
 
-    with pytest.raises(ValueError, match="Could not create a capture-group-disjoint split"):
+    with pytest.raises(ValueError, match="Each class must appear in at least"):
         stratified_group_holdout(X, y, groups)
