@@ -42,7 +42,23 @@ class ReplayCheckpointStore:
                 os.chmod(self.directory, 0o700)
         except OSError as error:
             raise CheckpointError("Cannot create private replay checkpoint directory.") from error
+        self._cleanup_orphan_temp_files()
         self.purge_expired()
+
+    def _cleanup_orphan_temp_files(self) -> None:
+        # A temporary file present during process startup was left by an
+        # interrupted atomic save and was never committed as a checkpoint.
+        for path in self.directory.glob(".netrax-checkpoint-*.tmp"):
+            try:
+                if path.is_dir() and not path.is_symlink():
+                    raise CheckpointError(
+                        f"Unexpected checkpoint temporary directory: {path.name}"
+                    )
+                path.unlink(missing_ok=True)
+            except OSError as error:
+                raise CheckpointError(
+                    f"Cannot clean interrupted checkpoint write: {path.name}"
+                ) from error
 
     @staticmethod
     def _identity_key(identity: dict) -> str:
@@ -79,8 +95,12 @@ class ReplayCheckpointStore:
 
     def load(self, identity: dict, *, expected_total_flows: int) -> int:
         path = self._path(identity)
+        if path.is_symlink():
+            raise CheckpointError("Replay checkpoint path must not be a symlink.")
         if not path.exists():
             return 0
+        if not path.is_file():
+            raise CheckpointError("Replay checkpoint path is not a regular file.")
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
