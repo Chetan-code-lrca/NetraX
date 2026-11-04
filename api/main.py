@@ -294,6 +294,14 @@ async def _analyze_upload(file: UploadFile):
                 "analysis_id": build_analysis_id(analysis_digest),
                 "filename": filename,
                 "file_type": input_type,
+                "direction_validation": {
+                    "status": "unverified",
+                    "reason": (
+                        "This ingestion path does not verify a trusted sensor or "
+                        "capture manifest. Bidirectional source traffic cannot be "
+                        "ruled out from the uploaded file alone."
+                    ),
+                },
                 "flows_processed": int(len(df)),
                 "packets_processed": inference["packets_processed"],
                 "alerts_generated": inference["alerts_generated"],
