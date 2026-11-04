@@ -16,9 +16,12 @@ This note covers the current non-privileged sensor foundation. It is not a live 
 ## Run in an isolated Docker container
 
 The repository provides an optional Compose profile named
-`offline-replay`. It runs with `network_mode: none`, a read-only root
-filesystem, dropped Linux capabilities, no-new-privileges, bounded memory/CPU,
-read-only input/config mounts and a persistent named spool volume.
+`offline-replay`. It uses the dedicated `Dockerfile.sensor` image, which
+contains only pinned `dpkt` and `jsonschema` replay dependencies—not the
+FastAPI, scikit-learn or CICFlowMeter runtime. It runs with `network_mode:
+none`, a read-only root filesystem, dropped Linux capabilities,
+no-new-privileges, bounded memory/CPU, read-only input/config mounts and a
+persistent named spool volume.
 
 Create a local capture directory and copy only authorized captures into it:
 
