@@ -41,3 +41,7 @@ export async function analyzeTraffic(file, signal) {
     signal,
   }))
 }
+
+export async function checkReadiness() {
+  return json(await fetch(url('/api/readiness'), { cache: 'no-store' }))
+}
