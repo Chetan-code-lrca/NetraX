@@ -21,7 +21,7 @@ from detection.input_limits import MAX_FLOW_ROWS
 from detection.model_paths import get_model_artifact_status
 
 
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.5.0"
 logger = logging.getLogger(__name__)
 
 ALLOWED_SUFFIXES = {
@@ -91,6 +91,8 @@ def health():
 def readiness():
     """Report optional runtime dependencies without loading model files."""
     artifacts = get_model_artifact_status()
+    # Readiness is public operational metadata; do not disclose server paths.
+    artifacts.pop("directory", None)
     converter = resolve_cicflowmeter_path()
     converter_path = shutil.which(converter) or converter
     converter_ready = (
@@ -107,7 +109,6 @@ def readiness():
         "model_artifacts": artifacts,
         "pcap_conversion": {
             "ready": converter_ready,
-            "executable": converter_path if converter_ready else None,
             "hint": (
                 None
                 if converter_ready
