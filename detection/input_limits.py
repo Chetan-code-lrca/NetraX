@@ -38,11 +38,6 @@ def read_bounded_flow_csv(
             "delimiter, and header row."
         ) from error
 
-    if frame.empty:
-        raise InvalidFlowCSVError(
-            "The uploaded CSV contains a header but no flow records."
-        )
-
     if len(frame.index) > max_rows:
         raise InputLimitError(
             f"Input contains more than {max_rows:,} flow rows. "
