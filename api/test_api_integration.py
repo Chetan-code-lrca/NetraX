@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import os
 import subprocess
@@ -564,6 +565,25 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         self.assertEqual(response.json()["error_code"], "model_unavailable")
         self.assertNotIn("details", response.json())
         self.assertNotIn(empty_dir, response.text)
+
+    def test_analysis_capacity_returns_retryable_429(self):
+        blocked_semaphore = asyncio.Semaphore(0)
+        with mock.patch.object(
+            self.api_main,
+            "ANALYSIS_SEMAPHORE",
+            blocked_semaphore,
+        ):
+            response = self.client.post(
+                "/api/analyze",
+                files={"file": ("capture.csv", b"ignored", "text/csv")},
+            )
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(
+            response.json()["error_code"],
+            "analysis_capacity_reached",
+        )
+        self.assertEqual(response.headers.get("retry-after"), "2")
 
     def test_empty_csv_is_rejected_as_client_error(self):
         path = Path(self.fixtures_dir.name) / "empty.csv"
