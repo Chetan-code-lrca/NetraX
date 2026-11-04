@@ -91,9 +91,39 @@ artifact SHA-256, detector name, schema version, training-code commit,
 framework versions, dataset provenance/license, split manifest, label
 mapping, threshold, metrics, calibration status, and approval owner.
 
-### 4. PCAP feature semantics must be tested against actual one-way captures
+### 4. PCAP ingestion does not establish that a capture is one-way
 
-NetraX uses CICFlowMeter to turn packet captures into flow CSV records.
+NetraX invokes CICFlowMeter to turn packet captures into flow CSV records.
+The pinned CICFlowMeter implementation identifies reverse-direction packets
+and groups them into the same flow. Its output includes both forward and
+reverse counters, and its flow duration is calculated across the packets in
+that flow. This is expected behavior for a bidirectional flow meter; it does
+not prove that a supplied PCAP came from a one-direction mirror.
+
+The current upload endpoint accepts PCAP/PCAPNG without sensor identity,
+mirror-direction metadata, or an independently verifiable one-way capture
+manifest. Consequently, a bidirectional PCAP can reach the inference
+pipeline. The current API cannot certify the one-way observation property
+from the file extension or the extracted column names.
+
+Required resolution:
+1. Treat arbitrary PCAP/PCAPNG uploads as direction-unverified.
+2. Introduce a sensor/capture manifest that identifies the observation point,
+   direction, capture interface, filter/version, clock source and whether the
+   reverse path was excluded by the sensor.
+3. Make the ingest layer preserve that manifest and mark a capture
+   direction-verified only when it originates from a trusted configured
+   sensor or an independently verified fixture.
+4. Add strict unidirectional PCAP fixtures and tests that prove reverse
+   packets are absent before claiming the input is one-way.
+5. Include direction-verification state and its provenance in every report.
+
+A user checkbox or self-attestation can record an operator assertion, but it
+is not technical verification. Until a trusted capture path exists, do not
+present arbitrary uploaded PCAPs as confirmed one-way traffic.
+
+### 5. PCAP feature semantics must be tested against actual one-way captures
+
 The deployment must not assume that a familiar column name means a feature
 was calculated under the correct visibility assumptions.
 
