@@ -16,6 +16,7 @@ from detection.encrypted_malware_detector import (
 )
 from detection.exfiltration_detector import detect_exfiltration
 from detection.model_detector import (
+    ModelFeatureContractError,
     detect_model_batch,
     load_model,
 )
@@ -120,6 +121,15 @@ class ModelUnavailableError(FlowExtractionError):
 def _load_model_or_raise(threat_class):
     try:
         return load_model(threat_class)
+    except ModelFeatureContractError as error:
+        raise ModelUnavailableError(
+            "model_contract_invalid",
+            (
+                f"Trained model for '{threat_class}' is incompatible with "
+                "the approved one-way feature contract. Retrain the model."
+            ),
+            details=str(error),
+        ) from error
     except FileNotFoundError as error:
         raise ModelUnavailableError(
             "model_unavailable",
