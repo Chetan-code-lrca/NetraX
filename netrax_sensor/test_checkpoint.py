@@ -71,6 +71,33 @@ def test_checkpoint_capacity_is_bounded(tmp_path):
         store.save(another, next_flow_index=1, total_flows=2)
 
 
+def test_checkpoint_rejects_non_object_json_payload(tmp_path):
+    store = ReplayCheckpointStore(tmp_path / "spool")
+    path = store._path(IDENTITY)
+    path.write_text("[]", encoding="utf-8")
+
+    with pytest.raises(CheckpointError, match="JSON object"):
+        store.load(IDENTITY, expected_total_flows=2)
+
+
+def test_checkpoint_rejects_boolean_indexes_and_invalid_totals(tmp_path):
+    store = ReplayCheckpointStore(tmp_path / "spool")
+    path = store._path(IDENTITY)
+    path.write_text(
+        json.dumps({
+            "identity": IDENTITY,
+            "next_flow_index": True,
+            "total_flows": 2,
+        }),
+        encoding="utf-8",
+    )
+    with pytest.raises(CheckpointError, match="next_flow_index"):
+        store.load(IDENTITY, expected_total_flows=2)
+
+    with pytest.raises(ValueError, match="must be an integer"):
+        store.save(IDENTITY, next_flow_index=True, total_flows=2)
+
+
 def test_checkpoint_rejects_out_of_range_index(tmp_path):
     store = ReplayCheckpointStore(tmp_path / "spool")
     with pytest.raises(ValueError, match="within the capture flow count"):
