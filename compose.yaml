@@ -24,8 +24,7 @@ services:
     profiles: ["offline-replay"]
     build:
       context: .
-      dockerfile: Dockerfile.api
-    entrypoint: ["python", "-m", "netrax_sensor.replay_to_spool"]
+      dockerfile: Dockerfile.sensor
     command: ["--help"]
     network_mode: none
     read_only: true
