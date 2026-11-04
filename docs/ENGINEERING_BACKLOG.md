@@ -32,7 +32,7 @@ This backlog is ordered by dependency. Do not begin downstream work before its a
 - [ ] Implement mTLS enrollment, certificate rotation and revocation.
 - [ ] Implement signed, validated configuration and safe update/rollback.
 - [x] Add deterministic, non-privileged PCAP/PCAPNG replay into schema-validated telemetry v1 (Ethernet, single-interface PCAPNG only).
-- [x] Package offline replay in a network-isolated Docker Compose profile with a persistent local spool volume and CI smoke test.
+- [x] Package offline replay in a network-isolated Docker Compose profile using a dedicated minimal sensor image, persistent local spool volume and CI smoke test.
 - [ ] Test backpressure, full disk, disconnect, clock skew, packet loss and restart.
 - [ ] Prove no inline forwarding, injection or active probing code path exists.
 
