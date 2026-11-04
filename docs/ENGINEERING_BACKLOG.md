@@ -28,7 +28,7 @@ This backlog is ordered by dependency. Do not begin downstream work before its a
 - [ ] Implement sensor heartbeat and health status.
 - [ ] Implement mTLS enrollment, certificate rotation and revocation.
 - [ ] Implement signed, validated configuration and safe update/rollback.
-- [ ] Add deterministic PCAP replay through the same feature pipeline.
+- [x] Add deterministic, non-privileged PCAP/PCAPNG replay into schema-validated telemetry v1 (Ethernet, single-interface PCAPNG only).
 - [ ] Test backpressure, full disk, disconnect, clock skew, packet loss and restart.
 - [ ] Prove no inline forwarding, injection or active probing code path exists.
 
