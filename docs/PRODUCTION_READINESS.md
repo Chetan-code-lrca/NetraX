@@ -72,6 +72,11 @@ Before exposing the service beyond a developer workstation:
 - Add authentication and authorization at the API boundary; CORS is not
   authentication.
 - Use TLS at the ingress, and restrict network access to the dashboard and API.
+- Review the PCAP parser dependency before production use. CICFlowMeter is
+  pinned and audited as a dependency, but its upstream PyPI page states that
+  the project is not actively maintained and the 0.5.0 release has no
+  publication provenance. Evaluate a maintained, compatible alternative or
+  establish an internal fork and patch/verification process.
 - Move long-running analysis to a durable bounded job queue with cancellation,
   status, retry policy, and per-job resource limits.
 - Apply request size, time, row-count, CPU, memory, and process limits. The
