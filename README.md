@@ -103,9 +103,22 @@ docker compose --profile offline-replay run --rm sensor-replay \
   --input /captures/lab.pcap
 ```
 
-The example sensor configuration is mounted read-only. Spool data persists in
-the Docker volume `netrax_sensor_spool`. The service sends zero network
-requests. It does not open a live interface or verify capture direction.
+The example sensor configuration is mounted read-only by default. For an
+organization-specific sensor identity, copy the example to an ignored local
+directory, edit it, and set `NETRAX_SENSOR_CONFIG` in `.env`:
+
+```bash
+mkdir -p sensor-config captures
+cp schemas/examples/sensor-config-v1.json sensor-config/sensor-config-v1.json
+# Edit organization_id, site_id, sensor_id, expected_direction,
+# monitoring_point_id, interfaces, capture_filter and spool policy.
+printf '\\nNETRAX_SENSOR_CONFIG=./sensor-config/sensor-config-v1.json\\n' >> .env
+```
+
+Spool data persists in the Docker volume `netrax_sensor_spool`. The service
+sends zero network requests. It does not open a live interface or verify
+capture direction. The local `captures/`, `sensor-config/` and `.env`
+paths are ignored by Git to reduce the risk of committing customer data.
 
 Inspect the local spool volume with a temporary read-only container only after
 stopping any replay process; do not edit queued event files manually. This
