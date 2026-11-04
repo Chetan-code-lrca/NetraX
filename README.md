@@ -287,6 +287,22 @@ python -m netrax_sensor.pcap_replay \
   --sensor-id sensor-replay-lab
 ```
 
+## Local sensor replay and spool foundation
+
+For a non-privileged end-to-end local workflow, NetraX can validate the sensor
+configuration, replay an authorized offline capture and persist telemetry v1
+events to a bounded local spool. It does not open a live interface or send
+network requests. See
+[Sensor Agent Foundation](docs/SENSOR_AGENT_FOUNDATION.md).
+
+```bash
+python -m pip install -r requirements.txt
+python -m netrax_sensor.replay_to_spool \
+  --input ./captures/lab.pcap \
+  --config schemas/examples/sensor-config-v1.json \
+  --spool-dir /tmp/netrax-spool
+```
+
 ## Explain the project
 
 For an implementation walkthrough, architecture decisions, known limitations,
