@@ -9,6 +9,15 @@ services:
     volumes:
       - ./model-artifacts:/models:ro
     restart: unless-stopped
+    # The API is non-root and has no reason to write to the container layer.
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
     healthcheck:
       test:
         - CMD
