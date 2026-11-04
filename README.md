@@ -79,6 +79,11 @@ are ready.
 
 ## Run locally without Docker
 
+For a guided setup on Linux/macOS, run `bash scripts/setup.sh`. On Windows,
+run `./scripts/setup.ps1` from PowerShell. The scripts install project
+packages; you still need to provide the trusted model artifacts described
+below.
+
 ### 1. Install the backend
 
 Use Python 3.12 or newer:
@@ -181,12 +186,11 @@ python -m pip install -r requirements.txt
 python -m pytest -q
 ```
 
-Frontend checks:
+Frontend production build:
 
 ```bash
 cd frontend
 npm ci
-npm run lint
 npm run build
 ```
 
