@@ -89,6 +89,13 @@ def main(argv: list[str] | None = None) -> int:
             "capture_sha256": result.capture_sha256,
             "replay_contract": "netrax.flow.observed.v1",
             "replay_implementation": REPLAY_IMPLEMENTATION_VERSION,
+            "replay_limits": {
+                "max_file_bytes": limits.max_file_bytes,
+                "max_packets": limits.max_packets,
+                "max_flows": limits.max_flows,
+                "max_packet_bytes": limits.max_packet_bytes,
+                "inactivity_timeout_seconds": limits.inactivity_timeout_seconds,
+            },
         }
         next_flow_index = checkpoint_store.load(
             checkpoint_identity,
