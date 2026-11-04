@@ -84,6 +84,29 @@ not be available until the required trusted artifacts are supplied. The UI
 shows this as an incomplete runtime setup rather than claiming all detectors
 are ready.
 
+## Run offline sensor replay with Docker (no Vercel deployment)
+
+The optional `sensor-replay` Compose profile runs the replay tool in an isolated
+container with no network, no Linux capture privileges, a read-only root
+filesystem, read-only capture/config mounts and a persistent local spool volume.
+
+1. Create a local capture directory and copy in a PCAP or supported single-interface PCAPNG:
+   `mkdir -p captures`
+2. Run the replay:
+
+```bash
+docker compose --profile offline-replay run --rm sensor-replay \
+  --input /captures/lab.pcap
+```
+
+The example sensor configuration is mounted read-only. Spool data persists in
+the Docker volume `netrax_sensor_spool`. The service sends zero network
+requests. It does not open a live interface or verify capture direction.
+
+Inspect the local spool volume with a temporary read-only container only after
+stopping any replay process; do not edit queued event files manually. This
+profile is an offline replay tool, not the live Linux sensor.
+
 ## Run locally without Docker
 
 For a guided setup on Linux/macOS, run `bash scripts/setup.sh`. On Windows,
