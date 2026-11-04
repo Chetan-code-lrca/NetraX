@@ -20,8 +20,8 @@ RUN python -m pip install --upgrade pip \
 COPY . .
 
 RUN useradd --create-home --uid 10001 netrax \
-    && mkdir -p /models \
-    && chown -R netrax:netrax /app
+    && mkdir -p /models /var/lib/netrax/spool \
+    && chown -R netrax:netrax /app /var/lib/netrax
 
 USER netrax
 
