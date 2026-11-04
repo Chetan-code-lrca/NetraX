@@ -7,8 +7,7 @@ from sklearn.model_selection import train_test_split
 
 from features.one_way_features import (
     ONE_WAY_FEATURE_SCHEMA_ID,
-    ORIGINATOR_ONLY,
-    validate_one_way_feature_names,
+    select_one_way_training_features,
 )
 
 DATA = "data/portscan_one_way.csv"
@@ -18,25 +17,7 @@ LABEL_COLUMN = " Label"
 
 def main():
     df = pd.read_csv(DATA)
-    if LABEL_COLUMN not in df.columns:
-        raise ValueError(f"Training dataset is missing label column {LABEL_COLUMN!r}.")
-
-    feature_names = validate_one_way_feature_names(ORIGINATOR_ONLY)
-    missing = [name for name in feature_names if name not in df.columns]
-    if missing:
-        raise ValueError(
-            f"Dataset does not satisfy {ONE_WAY_FEATURE_SCHEMA_ID}; "
-            f"missing features: {missing}"
-        )
-
-    X = df.loc[:, feature_names].copy()
-    y = df[LABEL_COLUMN].copy()
-
-    if X.isna().any().any():
-        raise ValueError(
-            "Training features contain missing values. Resolve them explicitly "
-            "before training; do not silently substitute zeros."
-        )
+    X, y = select_one_way_training_features(df, LABEL_COLUMN)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
