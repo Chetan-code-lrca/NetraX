@@ -112,7 +112,7 @@ mkdir -p sensor-config captures
 cp schemas/examples/sensor-config-v1.json sensor-config/sensor-config-v1.json
 # Edit organization_id, site_id, sensor_id, expected_direction,
 # monitoring_point_id, interfaces, capture_filter and spool policy.
-printf '\\nNETRAX_SENSOR_CONFIG=./sensor-config/sensor-config-v1.json\\n' >> .env
+printf '\nNETRAX_SENSOR_CONFIG=./sensor-config/sensor-config-v1.json\n' >> .env
 ```
 
 Spool data persists in the Docker volume `netrax_sensor_spool`. The service
