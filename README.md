@@ -60,7 +60,11 @@ Place your trained model artifacts in `model-artifacts/` as described in
 docker compose up --build
 ```
 
-Open **http://localhost:8080**.
+Open **http://localhost:8080**. The dashboard binds to loopback
+(`127.0.0.1`) by default. To bind another interface, set
+`NETRAX_BIND_ADDRESS` in your local `.env` file only when protected by an
+organization-managed firewall or reverse proxy; do not expose the console
+directly to the public internet.
 
 Stop the application with:
 
