@@ -44,16 +44,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install frontend dependencies
         run: npm ci
-      - name: Update frontend dependency lockfile
-        run: |
-          npm audit fix
-          echo "BEGIN_NETRAX_LOCKFILE"
-          cat package-lock.json
-          echo "END_NETRAX_LOCKFILE"
-      - name: Report frontend dependency advisories
-        run: |
-          npm audit --json > /tmp/netrax-npm-audit.json || true
-          cat /tmp/netrax-npm-audit.json
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
       - name: Build frontend
         run: npm run build
 
