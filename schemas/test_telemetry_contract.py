@@ -53,6 +53,13 @@ class TelemetryContractTests(unittest.TestCase):
             [],
         )
 
+    def test_sensor_scope_claims_are_required(self):
+        event = json.loads(json.dumps(self.example))
+        for field in ("organization_id", "site_id", "sensor_id"):
+            event.pop(field)
+            self.assertTrue(list(self.validator.iter_errors(event)))
+            event[field] = self.example[field]
+
     def test_unknown_top_level_fields_are_rejected(self):
         event = json.loads(json.dumps(self.example))
         event["unreviewed_field"] = "must not pass silently"
