@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netrax.example/schemas/sensor-config-v1.schema.json",
+  "title": "NetraX Linux sensor configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "organization_id",
+    "site_id",
+    "sensor_id",
+    "sensor_version",
+    "config_version",
+    "passive_mode",
+    "capture",
+    "spool"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "organization_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "site_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sensor_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sensor_version": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "config_version": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "passive_mode": { "const": true },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interfaces",
+        "capture_filter",
+        "snap_length_bytes",
+        "inactivity_timeout_seconds",
+        "expected_direction",
+        "monitoring_point_id"
+      ],
+      "properties": {
+        "interfaces": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          }
+        },
+        "capture_filter": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "snap_length_bytes": {
+          "type": "integer",
+          "minimum": 64,
+          "maximum": 262144
+        },
+        "inactivity_timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 3600
+        },
+        "expected_direction": {
+          "enum": ["ingress", "egress", "north_south", "east_west", "unknown"]
+        },
+        "monitoring_point_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "spool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "directory",
+        "max_bytes",
+        "max_events",
+        "max_event_age_seconds",
+        "max_event_bytes"
+      ],
+      "properties": {
+        "directory": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1048576,
+          "maximum": 1099511627776
+        },
+        "max_events": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        },
+        "max_event_age_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 31536000
+        },
+        "max_event_bytes": {
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 1000000
+        }
+      }
+    }
+  }
+}
