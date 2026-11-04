@@ -134,7 +134,9 @@ Before the demo:
 During the demo:
 
 1. Open `http://localhost:8080`.
-2. Upload the prepared file and run analysis.
+2. Upload the prepared file and run analysis. On a fresh clone without model
+   artifacts, use the dashboard's synthetic C2 sample link to exercise the
+   rule-based path.
 3. Pick one finding and explain its evidence, missing evidence, and
    observability status.
 4. Download the JSON report and open it to show that the output is portable.
