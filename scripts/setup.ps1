@@ -11,9 +11,13 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue) -or
     throw "Node.js 20+ and npm are required for the dashboard."
 }
 
-py -3.12 --version
+$PythonVersion = py -3 -c "import sys; print('.'.join(map(str, sys.version_info[:3])))"
+if ([version]$PythonVersion -lt [version]"3.12.0") {
+    throw "Python 3.12 or newer is required. Detected $PythonVersion."
+}
+node -e "const major = Number(process.versions.node.split('.')[0]); if (major < 20) { console.error('Node.js 20 or newer is required.'); process.exit(1); }"
 if (-not (Test-Path ".venv")) {
-    py -3.12 -m venv .venv
+    py -3 -m venv .venv
 }
 
 $Python = Join-Path $Root ".venv\Scripts\python.exe"
