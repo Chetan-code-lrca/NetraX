@@ -190,9 +190,14 @@ artifacts.
 | Extracted CSV flow rows | 100,000 |
 | CICFlowMeter conversion timeout | 120 seconds |
 | Alerts returned to the dashboard | 500 |
+| Concurrent analyses per API process | 2 (configurable) |
 
 The API reports explicit errors when a file is unsupported, too large, has too
-many rows, cannot be converted, or requires a missing model artifact.
+many rows, cannot be converted, or requires a missing model artifact. If the
+configured analysis slots are occupied, additional requests receive HTTP 429
+with a retry hint instead of starting unbounded concurrent work. The default
+limit is two concurrent analyses per API process and can be changed with
+`NETRAX_MAX_CONCURRENT_ANALYSES`. This is not a durable job queue.
 
 ## Tests and quality checks
 
