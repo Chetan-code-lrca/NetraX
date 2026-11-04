@@ -318,10 +318,13 @@ function App() {
                 <span> Missing model files: {readiness.model_artifacts?.missing?.join(', ') || 'not reported'}. See model-artifacts/README.md.</span>
               )}
               {!readiness.pcap_conversion?.ready && (
-                <span> PCAP conversion is unavailable until CICFlowMeter is installed. A flow CSV can still be analyzed when its required detector artifacts are present.</span>
+                <span> PCAP conversion is unavailable until CICFlowMeter is installed. Rule-based C2 CSV input can still be analyzed; model-based CSV contracts need the listed artifacts.</span>
               )}
             </div>
           )}
+          <div className="sample-tip" role="note">
+            First time using NetraX? Download the <a href="/examples/c2-behavioral-sample.csv" download>synthetic C2 sample CSV</a> to exercise the rule-based C2 detector without model artifacts. This is example data, not a real capture.
+          </div>
           {error && <div className="error">! <span>{error}</span></div>}
         </section>
 
