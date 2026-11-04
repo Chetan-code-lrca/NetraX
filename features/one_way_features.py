@@ -1,57 +1,38 @@
-"""Versioned feature contract for strictly one-direction CIC flow models.
+"""Versioned feature contract for strictly one-direction CIC flow models."""
 
-The v1 list is deliberately limited to features classified as observable in the
-master feature mapping for PortScan, DDoS, and Data_Exfiltration. It does not
-include bidirectional flow duration or aggregate TCP flag counters.
-"""
+import json
+from pathlib import Path
 
-ONE_WAY_FEATURE_SCHEMA_ID = "netrax.flow.forward.v1"
 
-ORIGINATOR_ONLY = [
-    " Destination Port",
-    " Total Fwd Packets",
-    "Total Length of Fwd Packets",
-    " Fwd Packet Length Max",
-    " Fwd Packet Length Min",
-    " Fwd Packet Length Mean",
-    "Fwd Packet Length Std",
-    " Fwd IAT Total",
-    " Fwd IAT Mean",
-    " Fwd IAT Std",
-    " Fwd IAT Max",
-    " Fwd IAT Min",
-    "Fwd PSH Flags",
-    " Fwd URG Flags",
-    " Fwd Header Length",
-    "Fwd Packets/s",
-    " Avg Fwd Segment Size",
-    "Fwd Header Length.1",
-    " Fwd Avg Bytes/Bulk",
-    " Fwd Avg Packets/Bulk",
-    " Fwd Avg Bulk Rate",
-    "Subflow Fwd Packets",
-    "Subflow Fwd Bytes",
-    "Init_Win_bytes_forward",
-    " act_data_pkt_fwd",
-    " min_seg_size_forward",
-]
-
-ONE_WAY_FEATURES = tuple(ORIGINATOR_ONLY)
-
-# These legacy fields were previously included in ORIGINATOR_ONLY but the
-# master mapping classifies them as responder-dependent. They are retained
-# here only to provide actionable diagnostics for incompatible old artifacts.
-RESPONDER_DEPENDENT_LEGACY_FEATURES = (
-    " Flow Duration",
-    " FIN Flag Count",
-    " SYN Flag Count",
-    " RST Flag Count",
-    " PSH Flag Count",
-    " ACK Flag Count",
-    " URG Flag Count",
-    " CWE Flag Count",
-    " ECE Flag Count",
+FEATURE_CONTRACT_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "schemas"
+    / "feature-contracts"
+    / "netrax.flow.forward.v1.json"
 )
+
+try:
+    _CONTRACT = json.loads(
+        FEATURE_CONTRACT_PATH.read_text(encoding="utf-8")
+    )
+except (OSError, json.JSONDecodeError) as error:
+    raise RuntimeError(
+        f"Cannot load NetraX feature contract at {FEATURE_CONTRACT_PATH}"
+    ) from error
+
+ONE_WAY_FEATURE_SCHEMA_ID = _CONTRACT["schema_id"]
+ONE_WAY_FEATURE_SCHEMA_VERSION = _CONTRACT["version"]
+ORIGINATOR_ONLY = list(_CONTRACT["allowed_features"])
+ONE_WAY_FEATURES = tuple(ORIGINATOR_ONLY)
+RESPONDER_DEPENDENT_LEGACY_FEATURES = tuple(
+    item["name"] for item in _CONTRACT["excluded_legacy_features"]
+)
+
+
+if len(ONE_WAY_FEATURES) != len(set(ONE_WAY_FEATURES)):
+    raise RuntimeError(
+        f"Duplicate feature names in {ONE_WAY_FEATURE_SCHEMA_ID}"
+    )
 
 
 def get_one_way_features(columns):
@@ -76,7 +57,7 @@ def validate_one_way_feature_names(feature_names):
     if not names:
         raise ValueError(
             "Model has no named input features; retrain it using a pandas "
-            "DataFrame and the NetraX feature contract."
+            "DataFrame and the NetraX one-way feature contract."
         )
 
     unsupported = unsupported_one_way_features(names)
