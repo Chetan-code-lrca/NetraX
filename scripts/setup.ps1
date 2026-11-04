@@ -23,7 +23,6 @@ if (-not (Test-Path ".venv")) {
 $Python = Join-Path $Root ".venv\Scripts\python.exe"
 & $Python -m pip install --upgrade pip
 & $Python -m pip install -r requirements.txt
-& $Python -m pip install cicflowmeter
 
 New-Item -ItemType Directory -Force -Path "model-artifacts" | Out-Null
 npm --prefix frontend ci
