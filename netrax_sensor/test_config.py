@@ -61,6 +61,14 @@ def test_config_requires_nonempty_capture_filter(tmp_path):
         load_sensor_config(_write(tmp_path, config))
 
 
+def test_config_rejects_duplicate_interfaces(tmp_path):
+    config = _config()
+    config["capture"]["interfaces"] = ["eno2", "eno2"]
+
+    with pytest.raises(SensorConfigError, match="interfaces"):
+        load_sensor_config(_write(tmp_path, config))
+
+
 def test_config_rejects_unknown_fields(tmp_path):
     config = _config()
     config["capture"]["allow_all_interfaces"] = True
