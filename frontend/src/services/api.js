@@ -1,15 +1,9 @@
-const API_BASE = import.meta.env.VITE_NETRAX_API_URL?.trim() || ''
+const API_BASE = (import.meta.env.VITE_NETRAX_API_URL?.trim() || '').replace(/\/+$/, '')
 
 function url(path) {
-  if (API_BASE) return `${API_BASE}${path}`
-
-  if (import.meta.env.PROD) {
-    throw new Error(
-      'NetraX API is not configured for this deployment. Set VITE_NETRAX_API_URL to the deployed FastAPI service.'
-    )
-  }
-
-  return path
+  // Same-origin is the default: the local dev server and production Nginx
+  // proxy /api/* to FastAPI. Set VITE_NETRAX_API_URL only for a separate API.
+  return API_BASE ? `${API_BASE}${path}` : path
 }
 
 async function json(response) {
@@ -40,4 +34,8 @@ export async function analyzeTraffic(file, signal) {
     body: form,
     signal,
   }))
+}
+
+export async function checkReadiness() {
+  return json(await fetch(url('/api/readiness'), { cache: 'no-store' }))
 }

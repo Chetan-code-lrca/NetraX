@@ -1,0 +1,2 @@
+src,window,flows_per_window,unique_destinations,unique_ports,repeated_pairs,periodic_pairs_cv1,periodic_pairs_cv05
+10.2.2.2,2026-01-01T00:00:00,240,70,30,10,8,4

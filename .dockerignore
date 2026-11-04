@@ -1,0 +1,29 @@
+# Local environments and caches
+.git
+.venv
+.venv-*
+venv
+__pycache__
+.pytest_cache
+.mypy_cache
+node_modules
+frontend/node_modules
+frontend/dist
+
+# Datasets, generated outputs and private model artifacts
+data/raw
+data/processed
+results
+model-artifacts
+*.joblib
+*.pkl
+*.pickle
+
+# Local secrets and editor files
+.env
+.env.*
+!.env.example
+.vscode
+.idea
+.DS_Store
+*.log

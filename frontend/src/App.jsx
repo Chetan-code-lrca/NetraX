@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { analyzeTraffic, checkHealth } from './services/api'
+import { analyzeTraffic, checkHealth, checkReadiness } from './services/api'
 
 const THREATS = [
   ['PortScan', 'PortScan'],
@@ -14,6 +14,7 @@ function App() {
   const inputRef = useRef(null)
   const abortRef = useRef(null)
   const [backend, setBackend] = useState('checking')
+  const [readiness, setReadiness] = useState(null)
   const [file, setFile] = useState(null)
   const [phase, setPhase] = useState('idle')
   const [result, setResult] = useState(null)
@@ -27,8 +28,16 @@ function App() {
     try {
       await checkHealth()
       setBackend('online')
+      try {
+        setReadiness(await checkReadiness())
+      } catch {
+        // Keep the dashboard compatible with API deployments that predate
+        // the optional readiness endpoint.
+        setReadiness(null)
+      }
     } catch {
       setBackend('offline')
+      setReadiness(null)
     }
   }
 
@@ -171,6 +180,36 @@ function App() {
     setSelectedId('')
     if (inputRef.current) inputRef.current.value = ''
   }
+ 
+  function downloadReport() {
+    if (!result) return
+
+    const report = {
+      report_version: '1.0',
+      generated_at: new Date().toISOString(),
+      product: 'NetraX',
+      purpose: 'Passive, evidence-aware network traffic analysis',
+      limitations: [
+        'A finding is an indicator for investigation, not proof of compromise.',
+        'Model confidence is not the same as a calibrated probability of real-world risk.',
+        'One-way observation cannot recover information that was not visible to the sensor.',
+        'Use only traffic captures you are authorized to analyze.',
+      ],
+      analysis: result,
+    }
+
+    const blob = new Blob([JSON.stringify(report, null, 2)], {
+      type: 'application/json',
+    })
+    const objectUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `netrax-${result.analysis_id || 'analysis'}.json`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+  }
 
   return (
     <div className="app">
@@ -200,7 +239,9 @@ function App() {
         </div>
         <div className="service-box">
           <span className={`dot ${backend}`} />
-          <span>{backend === 'online' ? 'ANALYSIS SERVICE READY' : backend === 'offline' ? 'BACKEND OFFLINE' : 'CHECKING SERVICE'}</span>
+          <span>{backend === 'online'
+            ? readiness?.status === 'degraded' ? 'API ONLINE · SETUP INCOMPLETE' : 'ANALYSIS SERVICE READY'
+            : backend === 'offline' ? 'BACKEND OFFLINE' : 'CHECKING SERVICE'}</span>
           <button onClick={health}>Refresh</button>
         </div>
       </header>
@@ -259,12 +300,30 @@ function App() {
             <small>Maximum upload size: 100 MB</small>
           </div>
           <div className="upload-foot">
-            <span style={{fontSize: '9px', color: '#60788c'}}>DEBUG BACKEND: {backend}</span>
+            <span style={{fontSize: '9px', color: '#60788c'}}>
+              {backend === 'online' ? 'Analysis service connected' : backend === 'offline' ? 'Service unavailable' : 'Checking service'}
+            </span>
             <span className="ready-state"><i className={file ? 'on' : ''} />{file ? 'Capture ready' : 'No capture selected'}</span>
             <div className="actions">
               <button className="secondary" onClick={reset}>Reset</button>
               <button className="primary" disabled={!file || backend !== 'online' || phase === 'analyzing'} onClick={analyze}>{phase === 'analyzing' ? 'Running analysis…' : 'Analyze traffic'}</button>
             </div>
+          </div>
+          {readiness && (
+            <div className={`readiness-note ${readiness.status === 'ready' ? 'ready' : 'warning'}`} role="status">
+              {readiness.status === 'ready'
+                ? 'Runtime checks passed: all model artifacts and the PCAP converter are available.'
+                : 'The API is online, but some runtime components are missing.'}
+              {!readiness.model_artifacts?.ready && (
+                <span> Missing model files: {readiness.model_artifacts?.missing?.join(', ') || 'not reported'}. See model-artifacts/README.md.</span>
+              )}
+              {!readiness.pcap_conversion?.ready && (
+                <span> PCAP conversion is unavailable until CICFlowMeter is installed. Rule-based C2 CSV input can still be analyzed; model-based CSV contracts need the listed artifacts.</span>
+              )}
+            </div>
+          )}
+          <div className="sample-tip" role="note">
+            First time using NetraX? Download the <a href="/examples/c2-behavioral-sample.csv" download>synthetic C2 sample CSV</a> to exercise the rule-based C2 detector without model artifacts. This is example data, not a real capture.
           </div>
           {error && <div className="error">! <span>{error}</span></div>}
         </section>
@@ -335,7 +394,10 @@ function App() {
             </div>
           </div>
           <div className="panel panel-body">
-            <div className="section-head"><div><div className="eyebrow">ANALYSIS STATE</div><h2>Decision context</h2></div></div>
+            <div className="section-head">
+              <div><div className="eyebrow">ANALYSIS STATE</div><h2>Decision context</h2></div>
+              <button className="secondary" type="button" disabled={!result} onClick={downloadReport}>Download report</button>
+            </div>
             <div className="decision"><div className="decision-icon">✓</div><div><b>{result ? decision(summary) : 'AWAITING CAPTURE'}</b><p>{result ? 'Decision reflects the evidence returned by the active detector pipeline.' : 'No results are shown until an analysis has completed.'}</p></div></div>
             <div className="state-list">
               <Row label="Analysis ID" value={result?.analysis_id || 'Not assigned'} mono />

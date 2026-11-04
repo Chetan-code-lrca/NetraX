@@ -460,6 +460,63 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             "ok",
         )
 
+    def test_bundled_c2_sample_runs_without_model_artifacts(self):
+        sample_path = (
+            REPO_ROOT
+            / "frontend"
+            / "public"
+            / "examples"
+            / "c2-behavioral-sample.csv"
+        )
+        self.assertTrue(sample_path.is_file())
+
+        previous_model_dir = os.environ.get("NETRAX_MODEL_DIR")
+        with tempfile.TemporaryDirectory(prefix="netrax-empty-models-") as empty_dir:
+            os.environ["NETRAX_MODEL_DIR"] = empty_dir
+            try:
+                response = self._post_csv(sample_path)
+            finally:
+                if previous_model_dir is None:
+                    os.environ.pop("NETRAX_MODEL_DIR", None)
+                else:
+                    os.environ["NETRAX_MODEL_DIR"] = previous_model_dir
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["flows_processed"], 1)
+        self.assertTrue(
+            any(
+                alert["threat_class"] == "C2_Beaconing"
+                for alert in payload["alerts"]
+            )
+        )
+
+    def test_readiness_reports_model_artifacts_and_pcap_converter(self):
+        response = self.client.get("/api/readiness")
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        self.assertIn(payload["status"], {"ready", "degraded"})
+        self.assertEqual(
+            payload["model_artifacts"]["missing"],
+            [],
+        )
+        self.assertEqual(
+            set(payload["model_artifacts"]["available"]),
+            {
+                "portscan_model.joblib",
+                "ddos_model.joblib",
+                "dns_char_vectorizer.joblib",
+                "dns_ngram_model.joblib",
+                "encrypted_malware_model.joblib",
+            },
+        )
+        self.assertNotIn("directory", payload["model_artifacts"])
+        self.assertIn("ready", payload["pcap_conversion"])
+        self.assertNotIn("executable", payload["pcap_conversion"])
+        self.assertEqual(payload["limits"]["max_upload_mb"], 100)
+        self.assertGreater(payload["limits"]["max_flow_rows"], 0)
+
     def test_cors_allows_only_configured_frontend_origin_without_credentials(self):
         allowed_origin = "https://netra-x-three.vercel.app"
         allowed = self.client.options(

@@ -55,6 +55,13 @@ button { cursor: pointer; }
 .dropzone span { color:#60768b; max-width:760px; padding:0 20px; text-align:center; font-size:11px; line-height:1.45; }
 .upload-symbol { width:38px; height:38px; border:1px solid #365671; border-radius:6px; display:grid; place-items:center; font-size:19px; }
 .upload-foot { margin-top:16px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.readiness-note { margin-top:14px; padding:11px 13px; border:1px solid var(--line2); border-radius:7px; font-size:11px; line-height:1.6; }
+.readiness-note.warning { color:var(--amber); border-color:rgba(222,183,109,.35); background:rgba(222,183,109,.06); }
+.readiness-note.ready { color:var(--green); border-color:rgba(89,210,148,.3); background:rgba(89,210,148,.05); }
+.readiness-note span { color:var(--muted); }
+.sample-tip { margin-top:12px; color:var(--muted); font-size:11px; line-height:1.6; }
+.sample-tip a { color:var(--blue); text-decoration:underline; text-underline-offset:2px; }
+
 .ready-state { color:#71869a; font-size:11px; display:flex; align-items:center; gap:7px; }
 .ready-state i { width:7px; height:7px; border-radius:50%; background:#556576; }
 .ready-state i.on { background:var(--green); }

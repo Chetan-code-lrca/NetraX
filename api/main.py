@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -13,10 +14,14 @@ from detection.inference import (
     FlowExtractionError,
     load_observations,
     run_unified_inference,
+    resolve_cicflowmeter_path,
 )
 
+from detection.input_limits import MAX_FLOW_ROWS
+from detection.model_paths import get_model_artifact_status
 
-APP_VERSION = "0.4.0"
+
+APP_VERSION = "0.5.0"
 logger = logging.getLogger(__name__)
 
 ALLOWED_SUFFIXES = {
@@ -79,6 +84,44 @@ def health():
         "status": "ok",
         "service": "netrax-api",
         "version": APP_VERSION,
+    }
+
+
+@app.get("/api/readiness")
+def readiness():
+    """Report optional runtime dependencies without loading model files."""
+    artifacts = get_model_artifact_status()
+    # Readiness is public operational metadata; do not disclose server paths.
+    artifacts.pop("directory", None)
+    converter = resolve_cicflowmeter_path()
+    converter_path = shutil.which(converter) or converter
+    converter_ready = (
+        Path(converter_path).is_file()
+        and os.access(converter_path, os.X_OK)
+    )
+
+    return {
+        "status": (
+            "ready"
+            if artifacts["ready"] and converter_ready
+            else "degraded"
+        ),
+        "model_artifacts": artifacts,
+        "pcap_conversion": {
+            "ready": converter_ready,
+            "hint": (
+                None
+                if converter_ready
+                else (
+                    "Install CICFlowMeter with 'python -m pip install cicflowmeter' "
+                    "or set NETRAX_CICFLOWMETER_PATH to its executable."
+                )
+            ),
+        },
+        "limits": {
+            "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024),
+            "max_flow_rows": MAX_FLOW_ROWS,
+        },
     }
 
 
