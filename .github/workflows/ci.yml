@@ -55,7 +55,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
-      - name: Build API image
-        run: docker build --file Dockerfile.api --tag netrax-api:ci .
-      - name: Build dashboard image
-        run: docker build --file frontend/Dockerfile --tag netrax-dashboard:ci ./frontend
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+      - name: Build API and dashboard images
+        run: docker compose build api dashboard
+      - name: Build offline replay image
+        run: docker compose --profile offline-replay build sensor-replay
+      - name: Smoke-test replay CLI without network access
+        run: |
+          set -euo pipefail
+          docker compose --profile offline-replay run --rm sensor-replay --help | grep -q -- "--input"
