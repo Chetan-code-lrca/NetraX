@@ -1,4 +1,4 @@
-const API_BASE = (import.meta.env.VITE_NETRAX_API_URL?.trim() || '').replace(/\\/+$/, '')
+const API_BASE = (import.meta.env.VITE_NETRAX_API_URL?.trim() || '').replace(/\/+$/, '')
 
 function url(path) {
   // Same-origin is the default: the local dev server and production Nginx
