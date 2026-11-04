@@ -116,6 +116,30 @@ def test_replay_to_spool_resumes_after_spool_full_and_acknowledgement(tmp_path, 
     assert queued_second[0]["flow"]["src"] == "192.0.2.11"
 
 
+def test_replay_to_spool_uses_new_checkpoint_when_inactivity_timeout_changes(tmp_path, capsys):
+    capture = tmp_path / "idle-gap.pcap"
+    packet = _ethernet_ipv4_tcp("192.0.2.10", "198.51.100.20", 50000, 443)
+    _write_pcap(capture, [(1000.0, packet), (1061.0, packet)])
+    spool_dir = tmp_path / "spool"
+
+    base_args = [
+        "--input", str(capture),
+        "--config", str(CONFIG),
+        "--spool-dir", str(spool_dir),
+    ]
+    assert main(base_args + ["--inactivity-timeout", "60"]) == 0
+    first_result = json.loads(capsys.readouterr().out)
+    assert first_result["events_enqueued"] == 2
+    assert first_result["spool"]["queued_events"] == 2
+
+    assert main(base_args + ["--inactivity-timeout", "120"]) == 0
+    second_result = json.loads(capsys.readouterr().out)
+    assert second_result["events_enqueued"] == 1
+    assert second_result["flows_skipped_from_checkpoint"] == 0
+    assert second_result["checkpoint_complete"] is True
+    assert second_result["spool"]["queued_events"] == 3
+
+
 def test_replay_to_spool_uses_config_digest_in_event_identity(tmp_path, capsys):
     capture = tmp_path / "capture.pcap"
     packet = _ethernet_ipv4_tcp("192.0.2.10", "198.51.100.20", 50000, 443)
