@@ -25,7 +25,8 @@ This backlog is ordered by dependency. Do not begin downstream work before its a
 - [ ] Implement bounded packet acquisition and measurable drop counters.
 - [ ] Implement direction-aware flow extraction from observed packets.
 - [x] Implement single-process local disk spool with atomic writes, quotas, expiry, restart recovery, explicit acknowledgement, and schema validation.
-- [x] Add per-capture/config replay checkpoints so spool-full replays resume after acknowledged events without re-enqueueing earlier flow indices.
+- [x] Add per-capture/config/replay-version checkpoints so spool-full replays resume after acknowledged events without re-enqueueing earlier flow indices.
+- [x] Test checkpoint restart recovery, expiry, identity versioning, and bounded record capacity.
 - [x] Define strict passive sensor configuration v1 with explicit interface allowlist, BPF filter, packet/timeout limits and spool policy.
 - [ ] Implement sensor heartbeat and health status.
 - [ ] Implement mTLS enrollment, certificate rotation and revocation.
