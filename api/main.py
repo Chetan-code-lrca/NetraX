@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import logging
 import os
@@ -31,6 +32,15 @@ ALLOWED_SUFFIXES = {
 }
 
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+MAX_CONCURRENT_ANALYSES = int(
+    os.environ.get("NETRAX_MAX_CONCURRENT_ANALYSES", "2")
+)
+ANALYSIS_SLOT_WAIT_SECONDS = 0.25
+
+if MAX_CONCURRENT_ANALYSES < 1:
+    raise RuntimeError("NETRAX_MAX_CONCURRENT_ANALYSES must be at least 1.")
+
+ANALYSIS_SEMAPHORE = asyncio.Semaphore(MAX_CONCURRENT_ANALYSES)
 
 EXTRA_ALLOWED_ORIGINS = [
     origin.strip()
@@ -180,12 +190,13 @@ def readiness():
         "limits": {
             "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024),
             "max_flow_rows": MAX_FLOW_ROWS,
+            "max_concurrent_analyses": MAX_CONCURRENT_ANALYSES,
+            "analysis_slot_wait_seconds": ANALYSIS_SLOT_WAIT_SECONDS,
         },
     }
 
 
-@app.post("/api/analyze")
-async def analyze(file: UploadFile = File(...)):
+async def _analyze_upload(file: UploadFile):
     supplied_filename = file.filename or "uploaded_traffic"
     # Treat both POSIX and Windows separators as path separators. The uploaded
     # filename is untrusted metadata and must never be used as a filesystem path.
@@ -300,3 +311,30 @@ async def analyze(file: UploadFile = File(...)):
                 "message": "Traffic analysis failed inside the analysis service.",
             },
         )
+
+@app.post("/api/analyze")
+async def analyze(file: UploadFile = File(...)):
+    """Run one bounded analysis or reject promptly when capacity is full."""
+    try:
+        await asyncio.wait_for(
+            ANALYSIS_SEMAPHORE.acquire(),
+            timeout=ANALYSIS_SLOT_WAIT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        return JSONResponse(
+            status_code=429,
+            headers={"Retry-After": "2"},
+            content={
+                "status": "error",
+                "error_code": "analysis_capacity_reached",
+                "message": (
+                    "NetraX is already processing the maximum number of analyses. "
+                    "Retry after the active analysis has completed."
+                ),
+            },
+        )
+
+    try:
+        return await _analyze_upload(file)
+    finally:
+        ANALYSIS_SEMAPHORE.release()
