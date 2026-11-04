@@ -41,3 +41,11 @@ A fresh source checkout without these files can start the API, but model-based
 analysis returns a clear model-unavailable response until the artifacts are
 supplied. Do not describe the model-based detectors as operational until their
 artifacts and evaluation results are available.
+
+## First-run demonstration without model files
+
+A fresh clone can still run the rule-based C2 behavioral path using the
+synthetic dashboard sample at
+`frontend/public/examples/c2-behavioral-sample.csv`. It is intentionally
+labelled as synthetic and is not a real capture. This does not enable the
+model-based PortScan, DDoS, DNS, or encrypted-malware paths.
