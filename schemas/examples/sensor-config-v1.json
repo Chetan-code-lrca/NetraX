@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "organization_id": "org-lab",
+  "site_id": "site-hq",
+  "sensor_id": "sensor-edge-01",
+  "sensor_version": "0.1.0",
+  "config_version": "cfg-0001",
+  "passive_mode": true,
+  "capture": {
+    "interfaces": ["eno2"],
+    "capture_filter": "ip or ip6",
+    "snap_length_bytes": 262144,
+    "inactivity_timeout_seconds": 60,
+    "expected_direction": "egress",
+    "monitoring_point_id": "mirror-port-02"
+  },
+  "spool": {
+    "directory": "/var/lib/netrax/spool",
+    "max_bytes": 268435456,
+    "max_events": 100000,
+    "max_event_age_seconds": 604800,
+    "max_event_bytes": 1000000
+  }
+}
