@@ -67,6 +67,10 @@ class ReplayLimits:
         for name in ("max_file_bytes", "max_packets", "max_flows", "max_packet_bytes"):
             if getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be greater than zero.")
+        if self.max_packet_bytes > DEFAULT_MAX_PACKET_BYTES:
+            raise ValueError(
+                f"max_packet_bytes cannot exceed {DEFAULT_MAX_PACKET_BYTES}."
+            )
         if self.inactivity_timeout_seconds <= 0:
             raise ValueError("inactivity_timeout_seconds must be greater than zero.")
 
@@ -257,6 +261,11 @@ def _validate_single_interface_pcapng(path: Path) -> None:
             if len(block_header) != 8:
                 raise ReplayError("invalid_pcapng", "PCAPNG block header is truncated.")
 
+            if block_header[:4] == PCAPNG_MAGIC:
+                raise ReplayError(
+                    "unsupported_pcapng_layout",
+                    "Multi-section PCAPNG files are not supported by this replay version.",
+                )
             block_type, block_length = struct.unpack(endian + "II", block_header)
             if block_length < 12 or block_length % 4:
                 raise ReplayError("invalid_pcapng", "PCAPNG block length is invalid.")
@@ -282,6 +291,11 @@ def _validate_single_interface_pcapng(path: Path) -> None:
                         "Multi-interface PCAPNG files are not supported by this replay version.",
                     )
             elif block_type in (PCAPNG_PACKET_BLOCK, PCAPNG_ENHANCED_PACKET_BLOCK):
+                if interface_count != 1:
+                    raise ReplayError(
+                        "invalid_pcapng",
+                        "PCAPNG packet blocks must follow the single interface description block.",
+                    )
                 if len(block_header) + len(block_tail) < 12:
                     raise ReplayError("invalid_pcapng", "PCAPNG packet block is truncated.")
                 interface_id = struct.unpack(endian + "I", block_tail[:4])[0]
@@ -292,7 +306,11 @@ def _validate_single_interface_pcapng(path: Path) -> None:
                     )
             elif block_type == PCAPNG_SIMPLE_PACKET_BLOCK:
                 # Simple Packet Blocks implicitly belong to interface 0.
-                pass
+                if interface_count != 1:
+                    raise ReplayError(
+                        "invalid_pcapng",
+                        "PCAPNG packet blocks must follow the single interface description block.",
+                    )
 
         if interface_count != 1:
             raise ReplayError(
@@ -333,11 +351,6 @@ def _open_capture(path: Path):
 
 def _decode_ethernet_packet(raw: bytes):
     """Return a directional flow key and safe packet metadata, or None."""
-    if len(raw) > DEFAULT_MAX_PACKET_BYTES:
-        raise ReplayError(
-            "packet_too_large",
-            "Capture contains a packet larger than the configured packet limit.",
-        )
     try:
         ethernet = dpkt.ethernet.Ethernet(raw)
         network = ethernet.data
@@ -632,6 +645,14 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.max_file_mb < 1:
             raise ReplayError("invalid_limit", "--max-file-mb must be at least 1.")
+        input_path = Path(args.input).resolve()
+        output_path = Path(args.output).resolve()
+        if input_path == output_path:
+            raise ReplayError(
+                "input_output_collision",
+                "Output path must differ from the input capture path.",
+            )
+
         limits = ReplayLimits(
             max_file_bytes=args.max_file_mb * 1024 * 1024,
             max_packets=args.max_packets,
