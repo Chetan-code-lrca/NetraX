@@ -46,3 +46,14 @@ jobs:
         run: npm ci
       - name: Build frontend
         run: npm run build
+
+  container-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Build API image
+        run: docker build --file Dockerfile.api --tag netrax-api:ci .
+      - name: Build dashboard image
+        run: docker build --file frontend/Dockerfile --tag netrax-dashboard:ci ./frontend
