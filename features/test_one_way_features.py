@@ -11,6 +11,7 @@ from features.one_way_features import (
     ORIGINATOR_ONLY,
     RESPONDER_DEPENDENT_LEGACY_FEATURES,
     get_one_way_features,
+    select_one_way_training_features,
     validate_one_way_feature_names,
 )
 
@@ -92,6 +93,30 @@ def test_adapter_does_not_map_responder_dependent_legacy_features():
         assert feature not in MODEL_TO_CIC
         with pytest.raises(KeyError, match="No CICFlowMeter mapping"):
             adapt_cicflow_row({}, [feature])
+
+
+def test_training_selector_uses_only_the_exact_v1_feature_contract():
+    values = {name: [1.0] for name in ORIGINATOR_ONLY}
+    values[" Flow Duration"] = [99.0]
+    values[" SYN Flag Count"] = [2.0]
+    values[" Label"] = ["BENIGN"]
+    frame = pd.DataFrame(values)
+
+    X, y = select_one_way_training_features(frame, " Label")
+
+    assert list(X.columns) == ORIGINATOR_ONLY
+    assert " Flow Duration" not in X.columns
+    assert " SYN Flag Count" not in X.columns
+    assert y.tolist() == ["BENIGN"]
+
+
+def test_training_selector_fails_when_contract_feature_is_missing():
+    values = {name: [1.0] for name in ORIGINATOR_ONLY if name != ORIGINATOR_ONLY[0]}
+    values[" Label"] = ["BENIGN"]
+    frame = pd.DataFrame(values)
+
+    with pytest.raises(ValueError, match="missing features"):
+        select_one_way_training_features(frame, " Label")
 
 
 def test_adapter_model_keys_are_approved_one_way_features():
