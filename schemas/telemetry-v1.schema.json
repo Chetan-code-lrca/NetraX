@@ -19,6 +19,7 @@
     "site_id": { "type": "string", "minLength": 1, "maxLength": 128 },
     "sensor_id": { "type": "string", "minLength": 1, "maxLength": 128 },
     "capture_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "config_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "sensor_version": { "type": "string", "minLength": 1, "maxLength": 64 },
     "config_version": { "type": "string", "minLength": 1, "maxLength": 128 },
     "capture_id": { "type": "string", "minLength": 1, "maxLength": 128 },
