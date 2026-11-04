@@ -23,6 +23,8 @@ if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
+node -e "const major = Number(process.versions.node.split('.')[0]); if (major < 20) { console.error('Node.js 20 or newer is required.'); process.exit(1); }"
+
 if [ ! -d .venv ]; then
   "$PYTHON_BIN" -m venv .venv
 fi
