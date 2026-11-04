@@ -44,7 +44,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32,
-            "pattern": "^[A-Za-z0-9_.:-]+$"
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "not": { "enum": ["any", "all", "*"] }
           }
         },
         "capture_filter": {
