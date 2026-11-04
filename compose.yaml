@@ -6,9 +6,19 @@ services:
     environment:
       NETRAX_MODEL_DIR: /models
       NETRAX_CICFLOWMETER_PATH: /usr/local/bin/cicflowmeter
+      NETRAX_MAX_CONCURRENT_ANALYSES: ${NETRAX_MAX_CONCURRENT_ANALYSES:-2}
     volumes:
       - ./model-artifacts:/models:ro
     restart: unless-stopped
+    # The API is non-root and has no reason to write to the container layer.
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
     healthcheck:
       test:
         - CMD
@@ -28,5 +38,5 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "8080:80"
+      - "${NETRAX_BIND_ADDRESS:-127.0.0.1}:${NETRAX_PORT:-8080}:80"
     restart: unless-stopped

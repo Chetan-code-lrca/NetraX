@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from detection.input_limits import InputLimitError, read_bounded_flow_csv
+from detection.input_limits import (
+    InputLimitError,
+    InvalidFlowCSVError,
+    read_bounded_flow_csv,
+)
 
 from detection.c2.c2_detector import FEATURES as C2_FEATURES
 from detection.c2.c2_detector import c2_score
@@ -20,6 +24,7 @@ from detection.model_detector import (
     load_model,
 )
 from detection.pipeline import build_alert
+from detection.model_paths import get_model_artifact_status
 from features.cicflow_adapter import adapt_cicflow_row
 
 
@@ -115,6 +120,20 @@ class FlowExtractionError(Exception):
 
 class ModelUnavailableError(FlowExtractionError):
     """Raised when a detector's trained model artifact is missing."""
+
+
+class UnsupportedInputError(FlowExtractionError, ValueError):
+    """Raised when uploaded tabular data matches no supported detector contract."""
+
+    def __init__(self):
+        super().__init__(
+            "unsupported_schema",
+            (
+                "CSV columns do not match a supported NetraX input contract. "
+                "Use a NetraX behavioral C2 CSV or an evaluated flow-feature, "
+                "DNS, or encrypted-flow schema."
+            ),
+        )
 
 
 def _load_model_or_raise(threat_class):
@@ -227,6 +246,8 @@ def load_observations(
             return read_bounded_flow_csv(input_path), "csv"
         except InputLimitError as error:
             raise FlowExtractionError("too_many_flows", str(error)) from error
+        except InvalidFlowCSVError as error:
+            raise FlowExtractionError("invalid_csv", str(error)) from error
 
     flow_csv = workspace / "flows.csv"
     resolved_cicflowmeter_path = resolve_cicflowmeter_path(
@@ -308,9 +329,7 @@ def detect_input_contract(df, flow_models):
     if EXFILTRATION_HINTS.intersection(columns):
         return "flow_features"
 
-    raise ValueError(
-        "Unsupported CSV schema for NetraX detectors."
-    )
+    raise UnsupportedInputError()
 
 
 def normalize_alert(alert, row, alert_id):
@@ -903,7 +922,23 @@ def run_unified_inference(df):
             flow_models=flow_models,
         )
     except ValueError:
-        if flow_models:
+        # Only attempt the model-backed flow schema fallback when the upload
+        # actually resembles a flow-feature table. Arbitrary CSV files should
+        # fail as unsupported input, not misleadingly as a missing-model error.
+        flow_artifacts = {
+            "portscan_model.joblib",
+            "ddos_model.joblib",
+        }
+        available_artifacts = set(
+            get_model_artifact_status()["available"]
+        )
+        can_check_model_schema = flow_artifacts.issubset(
+            available_artifacts
+        )
+        if flow_models or (
+            not _looks_like_flow_model_schema(columns)
+            and not can_check_model_schema
+        ):
             raise
 
         flow_models = {

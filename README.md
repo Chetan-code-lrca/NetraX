@@ -1,15 +1,22 @@
 # NetraX
 
-**Passive, evidence-aware analysis of one-way network traffic.**
+**Offline, evidence-aware analysis of network traffic files.**
 
-NetraX is a file-based network traffic analysis tool built around the SIH26145
-problem: detecting suspicious behavior when a monitoring point can observe only
-one direction of a communication flow.
+NetraX is a file-based network traffic analysis research tool built around the
+SIH26145 problem: detecting suspicious behavior when a monitoring point can
+observe only one direction of a communication flow.
+
+Important: the current upload path does not independently verify that a PCAP
+contains only one direction. CICFlowMeter groups forward and reverse packets
+when both are present. Treat arbitrary uploads as direction-unverified until
+they come from a trusted, documented one-direction capture source. See the
+[one-way feature and model audit](docs/ONE_WAY_FEATURE_AND_MODEL_AUDIT.md).
 
 The first practical workflow is intentionally simple: upload an authorized
 PCAP/PCAPNG capture or a supported flow CSV, run analysis, review evidence and
 download a JSON report. NetraX does not actively probe the network or perform
-mitigation.
+mitigation. Every result explicitly records capture-direction validation as
+unverified in the current release.
 
 ## What it can analyze
 
@@ -24,7 +31,16 @@ The current inference pipeline includes:
 
 The detectors do not all use the same technique. Some use trained model
 artifacts; C2 and exfiltration paths also include feature/rule-based analysis.
+The availability of an input path depends on its runtime dependencies and
+trusted model artifacts; see `/api/readiness` for the current machine's
+capability matrix. A successful readiness check is not an accuracy benchmark.
 An alert is an investigation lead, not proof that a host is compromised.
+
+The current repository also has an open one-way feature-contract issue:
+`Flow Duration` is classified differently in the one-way feature allowlist and
+the master mapping. Review
+[the feature and model audit](docs/ONE_WAY_FEATURE_AND_MODEL_AUDIT.md) before
+claiming the model pipeline is validated for strict one-way capture.
 
 ## Run it with Docker Compose
 
@@ -54,6 +70,13 @@ docker compose up --build
 ```
 
 Open **http://localhost:8080**.
+
+The dashboard binds to `127.0.0.1` by default, so it is reachable only from
+the same machine. Docker publishes ports on all host interfaces when no host
+IP is specified; do not change this default casually. To bind intentionally
+to a trusted LAN interface, copy `.env.example` to `.env` and set
+`NETRAX_BIND_ADDRESS` to that specific interface address. Do not expose this
+unauthenticated build to an untrusted network.
 
 Stop the application with:
 
@@ -93,7 +116,6 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install cicflowmeter
 ```
 
 For Windows PowerShell:
@@ -183,9 +205,14 @@ artifacts.
 | Extracted CSV flow rows | 100,000 |
 | CICFlowMeter conversion timeout | 120 seconds |
 | Alerts returned to the dashboard | 500 |
+| Concurrent analyses per API process | 2 (configurable) |
 
 The API reports explicit errors when a file is unsupported, too large, has too
-many rows, cannot be converted, or requires a missing model artifact.
+many rows, cannot be converted, or requires a missing model artifact. If the
+configured analysis slots are occupied, additional requests receive HTTP 429
+with a retry hint instead of starting unbounded concurrent work. The default
+limit is two concurrent analyses per API process and can be changed with
+`NETRAX_MAX_CONCURRENT_ANALYSES`. This is not a durable job queue.
 
 ## Tests and quality checks
 

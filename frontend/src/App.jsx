@@ -67,6 +67,9 @@ function App() {
     })
     return value
   }, [alerts])
+  const capabilityList = Object.values(readiness?.capabilities ?? {})
+  const availableCapabilities = capabilityList.filter(item => item.ready).map(item => item.label)
+  const unavailableCapabilities = capabilityList.filter(item => !item.ready).map(item => item.label)
 
   function choose(fileValue) {
     setError('')
@@ -188,11 +191,11 @@ function App() {
       report_version: '1.0',
       generated_at: new Date().toISOString(),
       product: 'NetraX',
-      purpose: 'Passive, evidence-aware network traffic analysis',
+      purpose: 'Offline, evidence-aware network traffic analysis',
       limitations: [
         'A finding is an indicator for investigation, not proof of compromise.',
         'Model confidence is not the same as a calibrated probability of real-world risk.',
-        'One-way observation cannot recover information that was not visible to the sensor.',
+        'Capture direction is not independently verified; an uploaded PCAP may contain bidirectional traffic.',
         'Use only traffic captures you are authorized to analyze.',
       ],
       analysis: result,
@@ -234,13 +237,17 @@ function App() {
           <img src="/netrax-mark.svg" alt="" />
           <div>
             <div className="brand-name">NETRAX</div>
-            <div className="brand-subtitle">AI-BASED DETECTION OF CYBER THREATS IN UNIDIRECTIONAL IP TRAFFIC</div>
+            <div className="brand-subtitle">OFFLINE NETWORK ANALYSIS · CAPTURE DIRECTION NOT VERIFIED</div>
           </div>
         </div>
         <div className="service-box">
           <span className={`dot ${backend}`} />
           <span>{backend === 'online'
-            ? readiness?.status === 'degraded' ? 'API ONLINE · SETUP INCOMPLETE' : 'ANALYSIS SERVICE READY'
+            ? readiness?.status === 'ready'
+              ? 'RUNTIME FILE CHECKS PASSED'
+              : readiness
+                ? 'API ONLINE · PARTIAL CAPABILITIES'
+                : 'API ONLINE · CHECKING CAPABILITIES'
             : backend === 'offline' ? 'BACKEND OFFLINE' : 'CHECKING SERVICE'}</span>
           <button onClick={health}>Refresh</button>
         </div>
@@ -250,8 +257,8 @@ function App() {
         <section className="hero">
           <div>
             <div className="eyebrow">NETRAX SECURITY CONSOLE</div>
-            <h1>Passive visibility for<br />one-way network traffic.</h1>
-            <p>Capture first. Analyze second. Decide only from the evidence that is actually observable.</p>
+            <h1>Evidence-led analysis for<br />network traffic files.</h1>
+            <p>Analyze authorized PCAP/PCAPNG and supported flow CSVs. This release does not independently verify capture direction.</p>
           </div>
           <div className="mode-card">
             <span>OBSERVATION MODE</span>
@@ -262,7 +269,7 @@ function App() {
 
         <section className="panel upload-panel">
           <div className="section-head">
-            <div><div className="eyebrow">TRAFFIC INPUT</div><h2>Captured traffic</h2></div>
+            <div><div className="eyebrow">TRAFFIC INPUT</div><h2>Traffic file</h2></div>
             <span>PCAP · PCAPNG · NETRAX FLOW CSV</span>
           </div>
           <input
@@ -303,7 +310,7 @@ function App() {
             <span style={{fontSize: '9px', color: '#60788c'}}>
               {backend === 'online' ? 'Analysis service connected' : backend === 'offline' ? 'Service unavailable' : 'Checking service'}
             </span>
-            <span className="ready-state"><i className={file ? 'on' : ''} />{file ? 'Capture ready' : 'No capture selected'}</span>
+            <span className="ready-state"><i className={file ? 'on' : ''} />{file ? 'File selected' : 'No file selected'}</span>
             <div className="actions">
               <button className="secondary" onClick={reset}>Reset</button>
               <button className="primary" disabled={!file || backend !== 'online' || phase === 'analyzing'} onClick={analyze}>{phase === 'analyzing' ? 'Running analysis…' : 'Analyze traffic'}</button>
@@ -311,17 +318,22 @@ function App() {
           </div>
           {readiness && (
             <div className={`readiness-note ${readiness.status === 'ready' ? 'ready' : 'warning'}`} role="status">
-              {readiness.status === 'ready'
-                ? 'Runtime checks passed: all model artifacts and the PCAP converter are available.'
-                : 'The API is online, but some runtime components are missing.'}
-              {!readiness.model_artifacts?.ready && (
-                <span> Missing model files: {readiness.model_artifacts?.missing?.join(', ') || 'not reported'}. See model-artifacts/README.md.</span>
-              )}
-              {!readiness.pcap_conversion?.ready && (
-                <span> PCAP conversion is unavailable until CICFlowMeter is installed. Rule-based C2 CSV input can still be analyzed; model-based CSV contracts need the listed artifacts.</span>
-              )}
+              <strong>
+                {readiness.status === 'ready'
+                  ? 'All supported offline input paths have their required runtime files.'
+                  : 'The API is online, but only some analysis paths are currently available.'}
+              </strong>
+              <span>Available: {availableCapabilities.join(' · ') || 'None reported'}.</span>
+              <span>Unavailable: {unavailableCapabilities.join(' · ') || 'None'}.</span>
+              <small>
+                Model readiness checks file presence only. The model is loaded and compatibility-tested when its detector runs.
+                See model-artifacts/README.md for trusted artifact setup.
+              </small>
             </div>
           )}
+          <div className="sample-tip" role="note">
+            **Capture direction is not verified.** A PCAP/PCAPNG may include both directions. Use only documented one-direction sensor captures for one-way research; reports remain marked unverified until a trusted sensor manifest is introduced.
+          </div>
           <div className="sample-tip" role="note">
             First time using NetraX? Download the <a href="/examples/c2-behavioral-sample.csv" download>synthetic C2 sample CSV</a> to exercise the rule-based C2 detector without model artifacts. This is example data, not a real capture.
           </div>
@@ -331,30 +343,30 @@ function App() {
         <section className="panel live-monitor-panel">
           <div className="section-head">
             <div>
-              <div className="eyebrow">LIVE MONITORING</div>
-              <h2>Continuous passive observation</h2>
+              <div className="eyebrow">LIVE CAPTURE STATUS</div>
+              <h2>Live capture is not available</h2>
             </div>
-            <span className="live-badge"><i /> DEPLOYMENT MODE</span>
+            <span className="live-badge">OFFLINE ANALYSIS MODE</span>
           </div>
           <div className="live-monitor-grid">
             <div className="live-state">
               <span className="status-ring" />
               <div>
-                <strong>Live capture agent required</strong>
+                <strong>No capture agent is configured</strong>
                 <p>
-                  24/7 monitoring needs a passive capture agent on the network
-                  (SPAN/TAP or data diode). The browser dashboard is the viewer;
-                  it does not sniff the network by itself.
+                  This build processes uploaded files only. It does not sniff a
+                  network interface, receive a sensor stream, or provide continuous
+                  monitoring. A separately secured passive sensor is required for that.
                 </p>
               </div>
             </div>
             <div className="live-specs">
-              <span>INGEST</span>
-              <strong>PCAP / flow stream</strong>
-              <span>PROCESSING</span>
-              <strong>Rolling flow windows</strong>
-              <span>ALERTS</span>
-              <strong>Real-time detector events</strong>
+              <span>AVAILABLE</span>
+              <strong>PCAP / PCAPNG / CSV upload</strong>
+              <span>NOT AVAILABLE</span>
+              <strong>Live capture and rolling windows</strong>
+              <span>NOT AVAILABLE</span>
+              <strong>Continuous alert stream</strong>
             </div>
           </div>
         </section>
@@ -398,11 +410,12 @@ function App() {
               <div><div className="eyebrow">ANALYSIS STATE</div><h2>Decision context</h2></div>
               <button className="secondary" type="button" disabled={!result} onClick={downloadReport}>Download report</button>
             </div>
-            <div className="decision"><div className="decision-icon">✓</div><div><b>{result ? decision(summary) : 'AWAITING CAPTURE'}</b><p>{result ? 'Decision reflects the evidence returned by the active detector pipeline.' : 'No results are shown until an analysis has completed.'}</p></div></div>
+            <div className="decision"><div className="decision-icon">✓</div><div><b>{result ? decision(summary) : 'AWAITING FILE'}</b><p>{result ? 'Decision reflects the evidence returned by the active detector pipeline.' : 'No results are shown until an analysis has completed.'}</p></div></div>
             <div className="state-list">
               <Row label="Analysis ID" value={result?.analysis_id || 'Not assigned'} mono />
               <Row label="Input" value={result?.filename || 'No file'} />
               <Row label="Type" value={result?.file_type || '—'} />
+              <Row label="Direction verification" value={result?.direction_validation?.status || 'Not verified'} />
               <Row label="Alerts returned" value={result?.alerts_returned ?? '—'} />
             </div>
           </div>
@@ -416,7 +429,7 @@ function App() {
           <Details alert={selected} />
         </section>
 
-        <footer><b>NETRAX</b><span>Passive observation · evidence-aware decisions</span>{result?.alerts_truncated && <span className="warn">Alert feed truncated</span>}</footer>
+        <footer><b>NETRAX</b><span>Offline analysis · evidence-aware decisions</span>{result?.alerts_truncated && <span className="warn">Alert feed truncated</span>}</footer>
       </main>
     </div>
   )
@@ -500,12 +513,12 @@ function TrafficFlowVisualization({ phase, file, alert }) {
   const destination = alert?.destination || 'Observed destination'
 
   const status = complete
-    ? 'THREAT DECISION GENERATED'
+    ? 'ANALYSIS COMPLETED'
     : analyzing
-      ? 'ANALYZING OBSERVED COPY'
+      ? 'ANALYZING UPLOADED FILE'
       : ready
-        ? 'CAPTURE READY'
-        : 'WAITING FOR TRAFFIC'
+        ? 'FILE SELECTED'
+        : 'WAITING FOR FILE'
 
   const statusClass = complete ? 'complete' : analyzing ? 'analyzing' : ready ? 'ready' : ''
 
@@ -514,17 +527,18 @@ function TrafficFlowVisualization({ phase, file, alert }) {
       <div className="traffic-flow-head">
         <div>
           <div className="eyebrow">TRAFFIC FLOW VISUALIZATION</div>
-          <h2>How NetraX observes one-way traffic</h2>
+          <h2>Conceptual passive deployment model</h2>
           <p>
-            The original path remains untouched. A passive copy is observed at the
-            network tap and sent to NetraX for analysis.
+            Illustrative architecture only. This is not a live network view or a connected
+            tap; the current release analyzes uploaded files and does not verify
+            that a PCAP contains only one traffic direction.
           </p>
         </div>
 
         <div className="flow-state">
           <span className={`status-led ${statusClass}`} />
           <div>
-            <b>{file ? 'CAPTURE REPLAY' : 'PASSIVE OBSERVATION'}</b>
+            <b>{file ? 'FILE ANALYSIS' : 'OFFLINE MODE'}</b>
             <small>{status}</small>
           </div>
         </div>
@@ -545,8 +559,8 @@ function TrafficFlowVisualization({ phase, file, alert }) {
 
         <div className="network-stage">
           <div className="traffic-caption">
-            <b>ONE-WAY NETWORK TRAFFIC</b>
-            <span>Packets continue from source to destination</span>
+            <b>ILLUSTRATIVE ONE-WAY PATH</b>
+            <span>Conceptual source-to-destination path</span>
           </div>
 
           <div className="main-path">

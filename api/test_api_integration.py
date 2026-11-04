@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import os
 import subprocess
@@ -386,6 +387,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             "analysis_id",
             "filename",
             "file_type",
+            "direction_validation",
             "flows_processed",
             "packets_processed",
             "alerts_generated",
@@ -396,6 +398,10 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         }
         self.assertTrue(
             required.issubset(payload.keys())
+        )
+        self.assertEqual(
+            payload["direction_validation"]["status"],
+            "unverified",
         )
 
     def test_upload_filename_cannot_escape_workspace(self):
@@ -496,7 +502,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         payload = response.json()
-        self.assertIn(payload["status"], {"ready", "degraded"})
+        self.assertIn(payload["status"], {"ready", "partial"})
         self.assertEqual(
             payload["model_artifacts"]["missing"],
             [],
@@ -512,10 +518,98 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             },
         )
         self.assertNotIn("directory", payload["model_artifacts"])
+        self.assertEqual(
+            payload["model_artifacts"]["verification"],
+            "presence_only",
+        )
+        self.assertTrue(
+            payload["capabilities"]["c2_behavioral_csv"]["ready"]
+        )
+        self.assertTrue(
+            payload["capabilities"]["flow_features_csv"]["ready"]
+        )
         self.assertIn("ready", payload["pcap_conversion"])
         self.assertNotIn("executable", payload["pcap_conversion"])
         self.assertEqual(payload["limits"]["max_upload_mb"], 100)
         self.assertGreater(payload["limits"]["max_flow_rows"], 0)
+
+    def test_partial_readiness_lists_only_usable_input_paths(self):
+        previous_model_dir = os.environ.get("NETRAX_MODEL_DIR")
+        with tempfile.TemporaryDirectory(prefix="netrax-no-models-") as empty_dir:
+            os.environ["NETRAX_MODEL_DIR"] = empty_dir
+            try:
+                response = self.client.get("/api/readiness")
+            finally:
+                if previous_model_dir is None:
+                    os.environ.pop("NETRAX_MODEL_DIR", None)
+                else:
+                    os.environ["NETRAX_MODEL_DIR"] = previous_model_dir
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "partial")
+        self.assertTrue(payload["capabilities"]["c2_behavioral_csv"]["ready"])
+        self.assertFalse(payload["capabilities"]["flow_features_csv"]["ready"])
+        self.assertFalse(payload["capabilities"]["dns_query_csv"]["ready"])
+        self.assertFalse(payload["capabilities"]["encrypted_flow_csv"]["ready"])
+        self.assertNotIn(empty_dir, response.text)
+
+    def test_missing_flow_models_return_503_without_internal_paths(self):
+        previous_model_dir = os.environ.get("NETRAX_MODEL_DIR")
+        with tempfile.TemporaryDirectory(prefix="netrax-no-models-") as empty_dir:
+            os.environ["NETRAX_MODEL_DIR"] = empty_dir
+            try:
+                response = self._post_csv(self.flow_csv)
+            finally:
+                if previous_model_dir is None:
+                    os.environ.pop("NETRAX_MODEL_DIR", None)
+                else:
+                    os.environ["NETRAX_MODEL_DIR"] = previous_model_dir
+
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertEqual(response.json()["error_code"], "model_unavailable")
+        self.assertNotIn("details", response.json())
+        self.assertNotIn(empty_dir, response.text)
+
+    def test_analysis_capacity_returns_retryable_429(self):
+        blocked_semaphore = asyncio.Semaphore(0)
+        with mock.patch.object(
+            self.api_main,
+            "ANALYSIS_SEMAPHORE",
+            blocked_semaphore,
+        ):
+            response = self.client.post(
+                "/api/analyze",
+                files={"file": ("capture.csv", b"ignored", "text/csv")},
+            )
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(
+            response.json()["error_code"],
+            "analysis_capacity_reached",
+        )
+        self.assertEqual(response.headers.get("retry-after"), "2")
+
+    def test_empty_csv_is_rejected_as_client_error(self):
+        path = Path(self.fixtures_dir.name) / "empty.csv"
+        path.write_text("", encoding="utf-8")
+
+        response = self._post_csv(path)
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error_code"], "invalid_csv")
+
+    def test_unsupported_csv_schema_is_rejected_as_client_error(self):
+        path = Path(self.fixtures_dir.name) / "unsupported.csv"
+        pd.DataFrame({"notes": ["not a network flow"]}).to_csv(
+            path,
+            index=False,
+        )
+
+        response = self._post_csv(path)
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error_code"], "unsupported_schema")
 
     def test_cors_allows_only_configured_frontend_origin_without_credentials(self):
         allowed_origin = "https://netra-x-three.vercel.app"
