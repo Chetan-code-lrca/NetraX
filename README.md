@@ -55,6 +55,13 @@ docker compose up --build
 
 Open **http://localhost:8080**.
 
+The dashboard binds to `127.0.0.1` by default, so it is reachable only from
+the same machine. Docker publishes ports on all host interfaces when no host
+IP is specified; do not change this default casually. To bind intentionally
+to a trusted LAN interface, copy `.env.example` to `.env` and set
+`NETRAX_BIND_ADDRESS` to that specific interface address. Do not expose this
+unauthenticated build to an untrusted network.
+
 Stop the application with:
 
 ```bash
