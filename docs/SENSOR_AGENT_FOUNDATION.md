@@ -47,12 +47,13 @@ The configured interface list, BPF filter, expected direction and monitoring-poi
 - **At-least-once delivery:** `read_batch()` does not delete or mark events sent. Re-reading the same batch is expected.
 - **Explicit acknowledgement:** call `acknowledge(event_ids)` only after a future ingest service confirms durable acceptance. Never acknowledge on a timeout or ambiguous network response.
 - **Idempotent retry:** event IDs are deterministic for the same capture, organization/site/sensor and config version/digest. Rerunning the exact same replay is a duplicate no-op.
-- **Changed config:** the config digest/version contributes to the event ID; replaying the same capture under a changed config creates a distinct event.
+- **Resumable backpressure:** a separate bounded checkpoint records the next flow index only after the event is durably present in the spool. When the spool fills, the command exits with a partial result. After queued events are acknowledged or expire, rerunning the same capture/config resumes from the first not-yet-enqueued flow.
+- **Changed config:** the config digest/version contributes to both event and checkpoint identity; replaying the same capture under a changed config creates a separate replay stream.
 - **Bounded storage:** maximum spool bytes, event count, individual event size and local enqueue age are enforced. A full spool raises an explicit error; it does not silently drop a new event.
 - **Crash recovery:** committed events are atomic JSON files. Interrupted temporary writes are cleaned when the single sensor process starts again.
 - **Integrity:** event JSON is checked against telemetry v1 on append and read; the filename is checked against its event ID.
 
-The spool supports a single writer process. It is not a shared multi-process queue, distributed broker or durable remote ingest service.
+The spool and replay checkpoint writer support a single sensor process. A future sender must coordinate with replay/acknowledgement in that process; do not run independent writers against the same spool directory. This is not a shared multi-process queue, distributed broker or durable remote ingest service.
 
 ## Security and data handling
 
