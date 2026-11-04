@@ -55,8 +55,11 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
-      - name: Validate Docker Compose configuration
-        run: docker compose config --quiet
+      - name: Validate Docker Compose configuration and loopback default
+        run: |
+          set -euo pipefail
+          docker compose config --quiet
+          docker compose config | grep -q '127.0.0.1:8080:80'
       - name: Build API and dashboard images
         run: docker compose build api dashboard
       - name: Build offline replay image
