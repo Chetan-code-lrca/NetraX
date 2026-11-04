@@ -24,7 +24,16 @@ The current inference pipeline includes:
 
 The detectors do not all use the same technique. Some use trained model
 artifacts; C2 and exfiltration paths also include feature/rule-based analysis.
+The availability of an input path depends on its runtime dependencies and
+trusted model artifacts; see `/api/readiness` for the current machine's
+capability matrix. A successful readiness check is not an accuracy benchmark.
 An alert is an investigation lead, not proof that a host is compromised.
+
+The current repository also has an open one-way feature-contract issue:
+`Flow Duration` is classified differently in the one-way feature allowlist and
+the master mapping. Review
+[the feature and model audit](docs/ONE_WAY_FEATURE_AND_MODEL_AUDIT.md) before
+claiming the model pipeline is validated for strict one-way capture.
 
 ## Run it with Docker Compose
 
