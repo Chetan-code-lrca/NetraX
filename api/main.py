@@ -192,6 +192,7 @@ def readiness():
             "max_flow_rows": MAX_FLOW_ROWS,
             "max_concurrent_analyses": MAX_CONCURRENT_ANALYSES,
             "analysis_slot_wait_seconds": ANALYSIS_SLOT_WAIT_SECONDS,
+            "concurrency_scope": "per API process",
         },
     }
 
