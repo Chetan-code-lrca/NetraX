@@ -136,6 +136,25 @@ def test_spool_detects_corrupt_queue_file(tmp_path):
         spool.read_batch()
 
 
+def test_spool_cleans_orphaned_atomic_write_files_on_restart(tmp_path):
+    directory = tmp_path / "spool"
+    directory.mkdir()
+    orphan = directory / ".netrax-event-interrupted.tmp"
+    orphan.write_bytes(b"partial")
+    DiskSpool(directory)
+    assert not orphan.exists()
+
+
+def test_spool_rejects_filename_that_does_not_match_event_id(tmp_path):
+    event = _event()
+    spool = DiskSpool(tmp_path / "spool")
+    event_file = spool.directory / "wrong-name.json"
+    event_file.write_text(json.dumps(event), encoding="utf-8")
+
+    with pytest.raises(SpoolCorruptionError, match="filename does not match"):
+        spool.read_batch()
+
+
 def test_spool_batch_limits_are_enforced(tmp_path):
     spool = DiskSpool(tmp_path / "spool")
     with pytest.raises(ValueError, match="greater than zero"):
