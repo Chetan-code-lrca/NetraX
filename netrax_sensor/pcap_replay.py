@@ -143,9 +143,10 @@ class ReplayResult:
     def iter_events(self) -> Iterator[dict]:
         for index, flow in enumerate(self.flows):
             identity = (
-                f"{self.capture_sha256}:{index}:{flow.src}:{flow.src_port}:"
-                f"{flow.dst}:{flow.dst_port}:{flow.protocol}:"
-                f"{flow.min_timestamp:.9f}:{flow.max_timestamp:.9f}"
+                f"{self.capture_sha256}:{self.organization_id}:{self.site_id}:"
+                f"{self.sensor_id}:{self.config_version}:{self.config_sha256}:"
+                f"{index}:{flow.src}:{flow.src_port}:{flow.dst}:{flow.dst_port}:"
+                f"{flow.protocol}:{flow.min_timestamp:.9f}:{flow.max_timestamp:.9f}"
             )
             event_id = "replay-" + hashlib.sha256(
                 identity.encode("utf-8")
