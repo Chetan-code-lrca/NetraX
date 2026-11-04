@@ -387,6 +387,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             "analysis_id",
             "filename",
             "file_type",
+            "direction_validation",
             "flows_processed",
             "packets_processed",
             "alerts_generated",
@@ -397,6 +398,10 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
         }
         self.assertTrue(
             required.issubset(payload.keys())
+        )
+        self.assertEqual(
+            payload["direction_validation"]["status"],
+            "unverified",
         )
 
     def test_upload_filename_cannot_escape_workspace(self):
