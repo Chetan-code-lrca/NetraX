@@ -1,44 +1,47 @@
-# NetraX Frontend
+# NetraX Dashboard
 
-React/Vite dashboard for the NetraX FastAPI service.
+The React/Vite frontend for the NetraX passive traffic-analysis application.
 
-## Run locally
+## Recommended run mode
 
-Clone the repository and move into the project:
-
-```bash
-git clone https://github.com/Chetan-code-lrca/NetraX.git
-cd NetraX
-```
-
-Start the API in one terminal:
+For the complete product, follow the root
+[README](../README.md) and run the API and dashboard together with Docker
+Compose:
 
 ```bash
-PYTHONPATH=. python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+docker compose up --build
 ```
 
-Start the dashboard in another terminal:
+Open **http://localhost:8080**.
+
+## Frontend-only development
+
+Start the FastAPI backend from the repository root:
+
+```bash
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+```
+
+In another terminal:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open **http://localhost:5173**. Vite proxies `/api/*` to the local API at
+`http://127.0.0.1:8000`.
 
-The Vite development server proxies `/api/*` to the local API at `http://127.0.0.1:8000`.
+For a separately deployed frontend, set `VITE_NETRAX_API_URL` at build time
+to the API base URL. Configure that frontend's origin in
+`NETRAX_ALLOWED_ORIGINS` on the backend.
 
-## Uploads
+## Scripts
 
-The dashboard accepts the traffic files supported by the NetraX API. CSV files must already contain the flow features expected by the backend. PCAP and PCAPNG files are converted to flow data by the backend before analysis.
+- `npm run dev` — start the development server
+- `npm run build` — create the production build
+- `npm run preview` — preview the production build locally
 
-## Vercel deployment
-
-Deploy the `frontend` directory as a Vite application and set:
-
-```text
-VITE_NETRAX_API_URL=<address of your deployed NetraX API>
-```
-
-The variable is used as the base URL for API requests when the dashboard and backend are deployed separately.
+The dashboard uploads files to the backend; it does not capture packets or
+run inference in the browser. It can export a completed analysis as JSON.
