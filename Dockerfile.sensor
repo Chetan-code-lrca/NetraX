@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+COPY requirements-sensor.txt .
+RUN python -m pip install --upgrade pip \
+    && python -m pip install --no-cache-dir -r requirements-sensor.txt \
+    && useradd --create-home --uid 10002 netrax-sensor \
+    && mkdir -p /var/lib/netrax/spool \
+    && chown -R netrax-sensor:netrax-sensor /var/lib/netrax
+
+COPY netrax_sensor/ ./netrax_sensor/
+COPY schemas/telemetry-v1.schema.json schemas/sensor-config-v1.schema.json ./schemas/
+
+USER netrax-sensor
+
+ENTRYPOINT ["python", "-m", "netrax_sensor.replay_to_spool"]
