@@ -109,8 +109,31 @@ class DiskSpool:
         except OSError as error:
             raise SpoolError(f"Cannot create spool directory: {self.directory}") from error
 
-        if not self.directory.is_dir():
-            raise SpoolError("Spool path is not a directory.")
+        if not self.directory.is_dir() or self.directory.is_symlink():
+            raise SpoolError("Spool path must be a real directory, not a symlink.")
+
+        if os.name != "nt":
+            try:
+                os.chmod(self.directory, 0o700)
+            except OSError as error:
+                raise SpoolError("Cannot restrict spool directory permissions.") from error
+
+        self._cleanup_orphan_temp_files()
+
+    def _cleanup_orphan_temp_files(self) -> None:
+        # The spool is single-process. Any matching temp file present at
+        # startup was left by an interrupted write and was never committed.
+        for path in self.directory.glob(".netrax-event-*.tmp"):
+            try:
+                if path.is_symlink() or not path.is_file():
+                    raise SpoolCorruptionError(
+                        f"Unexpected temporary spool entry: {path.name}"
+                    )
+                path.unlink()
+            except OSError as error:
+                raise SpoolError(
+                    f"Cannot clean interrupted spool write: {path.name}"
+                ) from error
 
     def _event_files(self) -> list[Path]:
         try:
@@ -241,6 +264,10 @@ class DiskSpool:
         total_bytes = 0
         with self._lock:
             for path in self._event_files():
+                if path.is_symlink() or not path.is_file():
+                    raise SpoolCorruptionError(
+                        f"Spool entry is not a regular file: {path.name}"
+                    )
                 try:
                     payload = path.read_bytes()
                 except FileNotFoundError:
@@ -270,6 +297,10 @@ class DiskSpool:
                 if errors:
                     raise SpoolCorruptionError(
                         f"Spool entry no longer satisfies telemetry v1: {path.name}"
+                    )
+                if path.name != _event_filename(event["event_id"]):
+                    raise SpoolCorruptionError(
+                        f"Spool filename does not match event_id: {path.name}"
                     )
 
                 batch.append(event)
