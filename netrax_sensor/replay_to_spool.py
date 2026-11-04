@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from netrax_sensor.checkpoint import CheckpointError, ReplayCheckpointStore
 from netrax_sensor.config import SensorConfigError, load_sensor_config
 from netrax_sensor.pcap_replay import ReplayError, ReplayLimits, replay_capture
 from netrax_sensor.spool import DiskSpool, SpoolError, SpoolFullError
@@ -34,6 +35,8 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     enqueued = 0
     duplicates = 0
+    skipped_checkpoint = 0
+    next_flow_index = 0
 
     try:
         if args.max_file_mb < 1:
@@ -68,12 +71,44 @@ def main(argv: list[str] | None = None) -> int:
             limits=limits,
         )
 
+        checkpoint_store = ReplayCheckpointStore(
+            spool_dir,
+            ttl_seconds=spool_values["max_event_age_seconds"],
+        )
+        checkpoint_identity = {
+            "organization_id": values["organization_id"],
+            "site_id": values["site_id"],
+            "sensor_id": values["sensor_id"],
+            "sensor_version": values["sensor_version"],
+            "config_version": values["config_version"],
+            "config_sha256": config.config_sha256,
+            "capture_id": result.capture_id,
+            "capture_sha256": result.capture_sha256,
+            "replay_contract": "netrax.flow.observed.v1",
+        }
+        next_flow_index = checkpoint_store.load(
+            checkpoint_identity,
+            expected_total_flows=result.flow_count,
+        )
+
         try:
-            for event in result.iter_events():
+            for index, event in enumerate(result.iter_events()):
+                if index < next_flow_index:
+                    skipped_checkpoint += 1
+                    continue
+
                 if spool.append(event):
                     enqueued += 1
                 else:
                     duplicates += 1
+
+                # Advance only after the event is durably present in the spool.
+                next_flow_index = index + 1
+                checkpoint_store.save(
+                    checkpoint_identity,
+                    next_flow_index=next_flow_index,
+                    total_flows=result.flow_count,
+                )
         except SpoolFullError as error:
             summary = result.summary()
             summary.update({
@@ -82,11 +117,13 @@ def main(argv: list[str] | None = None) -> int:
                 "message": str(error),
                 "events_enqueued": enqueued,
                 "duplicate_events": duplicates,
+                "flows_skipped_from_checkpoint": skipped_checkpoint,
+                "next_flow_index": next_flow_index,
                 "spool": spool.stats(),
                 "retry_behavior": (
-                    "Event IDs are deterministic for this capture and sensor "
-                    "configuration. After queued events are acknowledged or "
-                    "expire, rerun the same command to enqueue remaining events."
+                    "Replay progress is checkpointed after each durable spool "
+                    "append. After queued events are acknowledged or expire, "
+                    "rerun the same command to continue from next_flow_index."
                 ),
             })
             print(json.dumps(summary, indent=2, sort_keys=True), file=sys.stderr)
@@ -96,12 +133,14 @@ def main(argv: list[str] | None = None) -> int:
         summary.update({
             "events_enqueued": enqueued,
             "duplicate_events": duplicates,
+            "flows_skipped_from_checkpoint": skipped_checkpoint,
+            "checkpoint_complete": next_flow_index == result.flow_count,
             "spool": spool.stats(),
             "network_requests_sent": 0,
         })
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0
-    except (ReplayError, SensorConfigError, SpoolError, OSError, ValueError) as error:
+    except (ReplayError, SensorConfigError, SpoolError, CheckpointError, OSError, ValueError) as error:
         code = getattr(error, "code", "sensor_replay_failed")
         message = getattr(error, "message", str(error))
         print(
