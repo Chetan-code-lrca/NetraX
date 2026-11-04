@@ -13,6 +13,9 @@ from netrax_sensor.pcap_replay import ReplayError, ReplayLimits, replay_capture
 from netrax_sensor.spool import DiskSpool, SpoolError, SpoolFullError
 
 
+REPLAY_IMPLEMENTATION_VERSION = "0.1.0"
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -85,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
             "capture_id": result.capture_id,
             "capture_sha256": result.capture_sha256,
             "replay_contract": "netrax.flow.observed.v1",
+            "replay_implementation": REPLAY_IMPLEMENTATION_VERSION,
         }
         next_flow_index = checkpoint_store.load(
             checkpoint_identity,
