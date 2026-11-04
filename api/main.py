@@ -89,10 +89,30 @@ def health():
 
 @app.get("/api/readiness")
 def readiness():
-    """Report optional runtime dependencies without loading model files."""
+    """Report input-specific capabilities without deserializing model files.
+
+    Model status is a presence check only. Trusted model files are actually
+    loaded by the detector at inference time; readiness never unpickles them.
+    """
     artifacts = get_model_artifact_status()
     # Readiness is public operational metadata; do not disclose server paths.
     artifacts.pop("directory", None)
+    available = set(artifacts["available"])
+
+    flow_required = (
+        "portscan_model.joblib",
+        "ddos_model.joblib",
+    )
+    dns_required = (
+        "dns_char_vectorizer.joblib",
+        "dns_ngram_model.joblib",
+    )
+    encrypted_required = ("encrypted_malware_model.joblib",)
+
+    flow_ready = all(name in available for name in flow_required)
+    dns_ready = all(name in available for name in dns_required)
+    encrypted_ready = all(name in available for name in encrypted_required)
+
     converter = resolve_cicflowmeter_path()
     converter_path = shutil.which(converter) or converter
     converter_ready = (
@@ -100,12 +120,51 @@ def readiness():
         and os.access(converter_path, os.X_OK)
     )
 
+    capabilities = {
+        "c2_behavioral_csv": {
+            "label": "C2 behavioral CSV",
+            "ready": True,
+            "detectors": ["C2_Beaconing"],
+            "requires": [],
+        },
+        "flow_features_csv": {
+            "label": "Flow-feature CSV (PortScan, DDoS, exfiltration)",
+            "ready": flow_ready,
+            "detectors": ["PortScan", "DDoS", "Data_Exfiltration"],
+            "requires": list(flow_required),
+        },
+        "dns_query_csv": {
+            "label": "DNS query CSV",
+            "ready": dns_ready,
+            "detectors": ["DGA_DNS_Tunneling"],
+            "requires": list(dns_required),
+        },
+        "encrypted_flow_csv": {
+            "label": "Encrypted-flow CSV",
+            "ready": encrypted_ready,
+            "detectors": ["Encrypted_Malware"],
+            "requires": list(encrypted_required),
+        },
+        "pcap_analysis": {
+            "label": "PCAP / PCAPNG analysis",
+            "ready": converter_ready and flow_ready,
+            "detectors": ["PortScan", "DDoS", "Data_Exfiltration"],
+            "requires": [*flow_required, "CICFlowMeter"],
+        },
+    }
+
+    all_capabilities_ready = all(
+        capability["ready"] for capability in capabilities.values()
+    )
+    artifacts["verification"] = "presence_only"
+    artifacts["verification_note"] = (
+        "Readiness checks file presence only. Model compatibility and load "
+        "success are verified when a detector is invoked."
+    )
+
     return {
-        "status": (
-            "ready"
-            if artifacts["ready"] and converter_ready
-            else "degraded"
-        ),
+        "status": "ready" if all_capabilities_ready else "partial",
+        "capabilities": capabilities,
         "model_artifacts": artifacts,
         "pcap_conversion": {
             "ready": converter_ready,
@@ -191,7 +250,13 @@ async def analyze(file: UploadFile = File(...)):
                     "error_code": error.code,
                 }
                 if error.details:
-                    content["details"] = error.details
+                    # Keep converter/model diagnostics in server logs; avoid
+                    # returning internal paths or tool stderr to API clients.
+                    logger.debug(
+                        "Detailed analysis failure for %s: %s",
+                        filename,
+                        error.details,
+                    )
 
                 if error.code == "too_many_flows":
                     status_code = 413
@@ -202,6 +267,8 @@ async def analyze(file: UploadFile = File(...)):
                     "model_unavailable",
                 ):
                     status_code = 503
+                elif error.code in ("invalid_csv", "unsupported_schema"):
+                    status_code = 422
                 else:
                     status_code = 500
 
