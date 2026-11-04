@@ -77,7 +77,8 @@ It also does not prove model accuracy. The repository does not currently contain
 PortScan and DDoS training now require an explicit `--group-column` that
 identifies the original PCAP/capture or another defensible independent source
 group. They use a five-fold `StratifiedGroupKFold` holdout and require at least
-five distinct groups, every label in both partitions, and zero group overlap.
+at least five distinct groups per class, every label in both partitions, and
+zero group overlap.
 Missing or unsuitable group metadata stops training; there is no random
 row-level fallback.
 
