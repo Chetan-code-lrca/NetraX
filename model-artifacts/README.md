@@ -34,9 +34,15 @@ Retrain from the authorized one-way datasets and run the required held-out
 evaluation before copying the new artifacts here:
 
 ```bash
-python detection/train_portscan.py
-python detection/train_ddos.py
+python detection/train_portscan.py --group-column capture_id
+python detection/train_ddos.py --group-column capture_id
 ```
+
+Replace `capture_id` with the verified grouping column in your dataset. It
+must identify the original independent capture/source, not a per-flow ID.
+The scripts use a five-fold stratified group split and fail if there are fewer
+than five groups, missing group IDs, or any class cannot be represented in both
+partitions. They never fall back to random row-level splitting.
 
 The expected training datasets are not distributed in this repository.
 Do not treat successful synthetic CI model tests as evidence of detector
