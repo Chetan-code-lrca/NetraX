@@ -37,6 +37,7 @@ function App() {
       }
     } catch {
       setBackend('offline')
+      setReadiness(null)
     }
   }
 
@@ -299,7 +300,9 @@ function App() {
             <small>Maximum upload size: 100 MB</small>
           </div>
           <div className="upload-foot">
-            <span style={{fontSize: '9px', color: '#60788c'}}>DEBUG BACKEND: {backend}</span>
+            <span style={{fontSize: '9px', color: '#60788c'}}>
+              {backend === 'online' ? 'Analysis service connected' : backend === 'offline' ? 'Service unavailable' : 'Checking service'}
+            </span>
             <span className="ready-state"><i className={file ? 'on' : ''} />{file ? 'Capture ready' : 'No capture selected'}</span>
             <div className="actions">
               <button className="secondary" onClick={reset}>Reset</button>
