@@ -101,7 +101,12 @@ Acceptance:
 
 ### R1 — NetraX Linux sensor (first live-network component)
 
-Deliver:
+**Initial non-privileged replay slice implemented:** classic PCAP and
+single-interface Ethernet PCAPNG can be replayed into schema-validated
+telemetry v1. Replay is direction-unverified and does not open a live
+interface. See [Sensor Replay](SENSOR_REPLAY.md).
+
+Remaining live-sensor deliverables:
 - A dedicated Linux sensor service, initially unprivileged except for the minimal capture capability.
 - Explicit interface allowlist and passive capture mode.
 - Capture loss, packet counts, timestamps, truncation and interface state metrics.
