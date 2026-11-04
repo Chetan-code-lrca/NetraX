@@ -1,0 +1,41 @@
+{
+  "schema_name": "netrax.flow",
+  "schema_version": 1,
+  "event_id": "0192f6a0-3a00-7b00-8000-000000000001",
+  "event_time": "2026-11-04T08:00:00Z",
+  "organization_id": "org_example",
+  "site_id": "site_hq",
+  "sensor_id": "sensor_edge_01",
+  "sensor_version": "0.1.0",
+  "config_version": "cfg_0007",
+  "capture_id": "capture_20261104_0800",
+  "direction_validation": {
+    "status": "verified_unidirectional",
+    "direction": "egress",
+    "source_id": "mirror_port_02",
+    "configuration_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "capture_health": {
+    "packets_seen": 500000,
+    "packets_dropped": 0,
+    "clock_source": "ptp",
+    "clock_offset_ms": 0.4,
+    "snap_length_bytes": 128,
+    "interface_id": "eno2",
+    "capture_filter_id": "filter_egress_v1",
+    "buffer_capacity_bytes": 67108864,
+    "buffer_high_watermark_bytes": 12582912
+  },
+  "feature_schema_id": "netrax.flow.forward.v1",
+  "flow": {
+    "src": "192.0.2.10",
+    "dst": "198.51.100.20",
+    "protocol": "tcp",
+    "src_port": 50214,
+    "dst_port": 443,
+    "observed_packets": 18,
+    "observed_bytes": 9200,
+    "observed_duration_ms": 740,
+    "truncated": false
+  }
+}

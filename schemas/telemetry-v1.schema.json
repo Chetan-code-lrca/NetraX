@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netrax.example/schemas/telemetry-v1.schema.json",
+  "title": "NetraX telemetry envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_name", "schema_version", "event_id", "event_time",
+    "organization_id", "site_id", "sensor_id",
+    "sensor_version", "config_version", "capture_id",
+    "direction_validation", "capture_health", "feature_schema_id", "flow"
+  ],
+  "properties": {
+    "schema_name": { "const": "netrax.flow" },
+    "schema_version": { "const": 1 },
+    "event_id": { "type": "string", "minLength": 16, "maxLength": 128 },
+    "event_time": { "type": "string", "format": "date-time" },
+    "organization_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "site_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sensor_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sensor_version": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "config_version": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "capture_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "direction_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["verified_unidirectional", "bidirectional", "unknown", "unverified"] },
+        "direction": { "enum": ["ingress", "egress", "north_south", "east_west", "unknown"] },
+        "source_id": { "type": "string", "maxLength": 128 },
+        "configuration_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "verified_unidirectional" } }, "required": ["status"] },
+          "then": { "required": ["direction", "source_id", "configuration_digest"] }
+        }
+      ]
+    },
+    "capture_health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packets_seen", "packets_dropped", "clock_source", "snap_length_bytes", "interface_id", "capture_filter_id"],
+      "properties": {
+        "packets_seen": { "type": "integer", "minimum": 0 },
+        "packets_dropped": { "type": ["integer", "null"], "minimum": 0 },
+        "drop_counter_unavailable_reason": { "type": "string", "maxLength": 256 },
+        "clock_source": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "clock_offset_ms": { "type": ["number", "null"] },
+        "clock_offset_unavailable_reason": { "type": "string", "maxLength": 256 },
+        "snap_length_bytes": { "type": "integer", "minimum": 1, "maximum": 262144 },
+        "interface_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "capture_filter_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "buffer_capacity_bytes": { "type": "integer", "minimum": 0 },
+        "buffer_high_watermark_bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "feature_schema_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src", "dst", "protocol", "observed_packets", "observed_bytes", "observed_duration_ms"],
+      "properties": {
+        "src": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "dst": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "protocol": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "src_port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "dst_port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "observed_packets": { "type": "integer", "minimum": 1 },
+        "observed_bytes": { "type": "integer", "minimum": 0 },
+        "observed_duration_ms": { "type": "number", "minimum": 0 },
+        "sampling_rate": { "type": "number", "exclusiveMinimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    }
+  }
+}
