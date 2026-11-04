@@ -13,6 +13,30 @@ This note covers the current non-privileged sensor foundation. It is not a live 
 | Local outbox | Atomic per-event files, bounded by bytes/count/TTL, explicit acknowledgements and restart recovery |
 | Replay-to-spool CLI | Replays a capture using sensor identity/config labels and enqueues events locally; sends no network requests |
 
+## Run in an isolated Docker container
+
+The repository provides an optional Compose profile named
+`offline-replay`. It runs with `network_mode: none`, a read-only root
+filesystem, dropped Linux capabilities, no-new-privileges, bounded memory/CPU,
+read-only input/config mounts and a persistent named spool volume.
+
+Create a local capture directory and copy only authorized captures into it:
+
+```bash
+mkdir -p captures
+docker compose --profile offline-replay run --rm sensor-replay \
+  --input /captures/lab.pcap
+```
+
+The example config is mounted at
+`/config/sensor-config-v1.json`; the named volume
+`netrax_sensor_spool` stores events and checkpoints at
+`/var/lib/netrax/spool`. The container has no network access and no live
+capture capability. It only replays the supplied offline file.
+
+The Vercel frontend is not part of this command. No Vercel deployment is
+required or triggered.
+
 ## Run the end-to-end local flow
 
 Install the project requirements:
