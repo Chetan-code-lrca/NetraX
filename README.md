@@ -100,7 +100,8 @@ filesystem, read-only capture/config mounts and a persistent local spool volume.
 
 ```bash
 docker compose --profile offline-replay run --rm sensor-replay \
-  --input /captures/lab.pcap
+  --input /captures/lab.pcap \
+  --config /config/sensor-config-v1.json
 ```
 
 The example sensor configuration is mounted read-only by default. For an
