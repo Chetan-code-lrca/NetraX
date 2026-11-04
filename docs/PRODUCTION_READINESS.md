@@ -70,10 +70,11 @@ Before exposing the service beyond a developer workstation:
 - Add authentication and authorization at the API boundary; CORS is not
   authentication.
 - Use TLS at the ingress, and restrict network access to the dashboard and API.
-- Add bounded analysis concurrency and an explicit overload response.
-- Move long-running analysis to a bounded job queue with cancellation,
+- Move long-running analysis to a durable bounded job queue with cancellation,
   status, retry policy, and per-job resource limits.
-- Apply request size, time, row-count, CPU, memory, and process limits.
+- Apply request size, time, row-count, CPU, memory, and process limits. The
+  current API has a per-process concurrency gate; CPU/memory quotas and a
+  durable queue still need deployment-level validation.
 - Store captures only when necessary, encrypt them at rest, and define
   retention and deletion behavior.
 - Keep secrets outside source control; rotate credentials and document the
