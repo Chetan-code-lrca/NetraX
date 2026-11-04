@@ -59,7 +59,18 @@ jobs:
         run: |
           set -euo pipefail
           docker compose config --quiet
-          docker compose config | grep -q '127.0.0.1:8080:80'
+          docker compose config --format json | python -c '
+          import json, sys
+          config = json.load(sys.stdin)
+          ports = config["services"]["dashboard"]["ports"]
+          assert any(
+              port.get("host_ip") == "127.0.0.1"
+              and str(port.get("published")) == "8080"
+              and int(port.get("target")) == 80
+              for port in ports
+          ), ports
+          print("Dashboard binds to 127.0.0.1:8080 only.")
+          '
       - name: Build API and dashboard images
         run: docker compose build api dashboard
       - name: Build offline replay image
