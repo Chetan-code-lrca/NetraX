@@ -267,6 +267,26 @@ upload/dashboard layer replaceable.
 - One-way visibility is incomplete by design. NetraX reports evidence limits;
   it cannot infer packets or metadata the sensor never observed.
 
+## Offline sensor replay (engineering preview)
+
+NetraX now includes a non-privileged PCAP/PCAPNG replay command that emits
+schema-validated telemetry v1 NDJSON. It supports classic PCAP and
+single-interface Ethernet PCAPNG. Direction is always marked unverified;
+this is not live capture and does not establish a one-way sensor source.
+
+See [Sensor Replay documentation](docs/SENSOR_REPLAY.md) for limits, supported
+packet types, output semantics and regression tests.
+
+```bash
+python -m pip install -r requirements.txt
+python -m netrax_sensor.pcap_replay \
+  --input ./captures/lab.pcap \
+  --output ./out/flows.ndjson \
+  --organization-id org-lab \
+  --site-id site-lab \
+  --sensor-id sensor-replay-lab
+```
+
 ## Explain the project
 
 For an implementation walkthrough, architecture decisions, known limitations,
