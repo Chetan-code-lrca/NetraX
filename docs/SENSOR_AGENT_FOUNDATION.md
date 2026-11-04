@@ -32,8 +32,11 @@ docker compose --profile offline-replay run --rm sensor-replay \
 ```
 
 The example config is mounted at
-`/config/sensor-config-v1.json`; the named volume
-`netrax_sensor_spool` stores events and checkpoints at
+`/config/sensor-config-v1.json` by default. For a real organization, copy it
+to `sensor-config/sensor-config-v1.json`, update the organization/site/sensor
+IDs and approved monitoring-point settings, then set
+`NETRAX_SENSOR_CONFIG=./sensor-config/sensor-config-v1.json` in `.env`.
+The named volume `netrax_sensor_spool` stores events and checkpoints at
 `/var/lib/netrax/spool`. The container has no network access and no live
 capture capability. It only replays the supplied offline file.
 
