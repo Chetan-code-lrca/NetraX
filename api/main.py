@@ -190,8 +190,9 @@ async def analyze(file: UploadFile = File(...)):
                     "message": error.message,
                     "error_code": error.code,
                 }
-                if error.details:
-                    content["details"] = error.details
+                # Keep raw dependency/model diagnostics in server logs only.
+                # They can contain local paths or implementation details and
+                # should not be returned to an unauthenticated upload client.
 
                 if error.code == "too_many_flows":
                     status_code = 413
