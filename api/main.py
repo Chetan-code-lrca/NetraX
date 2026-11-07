@@ -181,23 +181,17 @@ async def analyze(file: UploadFile = File(...)):
                 )
             except FlowExtractionError as error:
                 logger.warning(
-                    "Flow extraction failed for %s (%s): %s",
+                    "Flow extraction failed for %s: %s",
                     filename,
-                    error.code,
                     error.message,
                 )
-                if error.details:
-                    logger.debug(
-                        "Flow extraction diagnostic for %s: %s",
-                        filename,
-                        error.details,
-                    )
                 content = {
                     "status": "error",
                     "message": error.message,
                     "error_code": error.code,
                 }
-                # Internal converter/model diagnostics stay in server logs.
+                if error.details:
+                    content["details"] = error.details
 
                 if error.code == "too_many_flows":
                     status_code = 413
