@@ -183,9 +183,14 @@ artifacts.
 | Extracted CSV flow rows | 100,000 |
 | CICFlowMeter conversion timeout | 120 seconds |
 | Alerts returned to the dashboard | 500 |
+| Simultaneous analysis jobs per API process | 2 |
 
 The API reports explicit errors when a file is unsupported, too large, has too
-many rows, cannot be converted, or requires a missing model artifact.
+many rows, cannot be converted, or requires a missing model artifact. Each API
+process accepts at most two simultaneous analyses; additional requests receive
+HTTP 503 with a `Retry-After` header rather than starting unbounded conversion
+jobs. This is a per-process concurrency bound, not a substitute for an
+edge-level rate limit or a distributed queue in a multi-replica deployment.
 
 ## Tests and quality checks
 

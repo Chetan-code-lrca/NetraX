@@ -447,6 +447,24 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
                     Path(supplied_name.replace("\\", "/")).name,
                 )
 
+    def test_analysis_capacity_returns_retryable_service_unavailable(self):
+        with mock.patch.object(
+            self.api_main,
+            "ANALYSIS_SLOTS",
+            mock.Mock(acquire=mock.Mock(return_value=False)),
+        ):
+            response = self.client.post(
+                "/api/analyze",
+                files={"file": ("sample.csv", b"src,dst\\n10.0.0.1,10.0.0.2\\n", "text/csv")},
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.headers.get("retry-after"), "5")
+        self.assertEqual(
+            response.json()["error_code"],
+            "analysis_capacity_reached",
+        )
+
     def test_health(self):
         response = self.client.get(
             "/api/health"
