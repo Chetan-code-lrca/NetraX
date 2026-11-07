@@ -771,7 +771,7 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
                 args=["cicflowmeter"],
                 returncode=1,
                 stdout="",
-                stderr="failed",
+                stderr="failed /srv/private/netrax/internal/model-path",
             ),
         ):
             with self.pcap_file.open("rb") as handle:
@@ -795,6 +795,8 @@ class AnalyzeApiIntegrationTest(unittest.TestCase):
             payload["error_code"],
             "cicflow_failed",
         )
+        self.assertNotIn("details", payload)
+        self.assertNotIn("/srv/private/netrax", response.text)
 
     def test_pcap_missing_output_maps_to_500(self):
         with mock.patch(
