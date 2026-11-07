@@ -62,8 +62,10 @@ docker compose down
 ```
 
 The dashboard container serves the built React application and proxies
-`/api/*` requests to the FastAPI service. The API is not exposed directly to
-the host by the Compose configuration.
+`/api/*` requests to the FastAPI service. By default, Compose binds the
+dashboard to `127.0.0.1:8080`, so it is reachable only from the local host;
+the API is not published directly to the host. See [SECURITY.md](SECURITY.md)
+before changing the bind address or deploying to a shared network.
 
 ### Check runtime readiness
 
