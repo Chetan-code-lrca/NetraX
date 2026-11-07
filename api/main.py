@@ -2,6 +2,7 @@ import hashlib
 import logging
 import os
 import shutil
+from threading import BoundedSemaphore
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -31,6 +32,8 @@ ALLOWED_SUFFIXES = {
 }
 
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+MAX_CONCURRENT_ANALYSES = 2
+ANALYSIS_SLOTS = BoundedSemaphore(MAX_CONCURRENT_ANALYSES)
 
 EXTRA_ALLOWED_ORIGINS = [
     origin.strip()
@@ -121,6 +124,7 @@ def readiness():
         "limits": {
             "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024),
             "max_flow_rows": MAX_FLOW_ROWS,
+            "max_concurrent_analyses": MAX_CONCURRENT_ANALYSES,
         },
     }
 
@@ -139,6 +143,20 @@ async def analyze(file: UploadFile = File(...)):
             content={
                 "status": "error",
                 "message": "Unsupported file type. Use PCAP, PCAPNG or CSV.",
+            },
+        )
+
+    if not ANALYSIS_SLOTS.acquire(blocking=False):
+        return JSONResponse(
+            status_code=503,
+            headers={"Retry-After": "5"},
+            content={
+                "status": "error",
+                "error_code": "analysis_capacity_reached",
+                "message": (
+                    "The analysis service is busy processing other files. "
+                    "Wait a few seconds and retry."
+                ),
             },
         )
 
@@ -233,3 +251,5 @@ async def analyze(file: UploadFile = File(...)):
                 "message": "Traffic analysis failed inside the analysis service.",
             },
         )
+    finally:
+        ANALYSIS_SLOTS.release()
