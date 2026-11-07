@@ -55,6 +55,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
       - name: Build API image
         run: docker build --file Dockerfile.api --tag netrax-api:ci .
       - name: Build dashboard image
